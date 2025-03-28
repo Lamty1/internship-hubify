@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,12 +9,13 @@ import {
   Filter, 
   SlidersHorizontal,
   X, 
-  ChevronDown
+  ChevronDown,
+  Bookmark
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 
-// Mock data for internships
 const MOCK_INTERNSHIPS = [
   {
     id: 1,
@@ -89,6 +89,8 @@ const Internships = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [location, setLocation] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [sortBy, setSortBy] = useState('recent');
+  const [savedInternships, setSavedInternships] = useState<number[]>([]);
   const [filters, setFilters] = useState({
     type: '',
     duration: '',
@@ -112,8 +114,22 @@ const Internships = () => {
     });
   };
 
-  // Filter internships based on search, location, and other filters
-  const filteredInternships = MOCK_INTERNSHIPS.filter(internship => {
+  const handleSaveInternship = (e: React.MouseEvent, internshipId: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    setSavedInternships(prev => {
+      if (prev.includes(internshipId)) {
+        return prev.filter(id => id !== internshipId);
+      } else {
+        return [...prev, internshipId];
+      }
+    });
+  };
+
+  let processedInternships = [...MOCK_INTERNSHIPS];
+  
+  processedInternships = processedInternships.filter(internship => {
     const matchesSearch = internship.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       internship.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
       internship.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -129,6 +145,11 @@ const Internships = () => {
     
     return matchesSearch && matchesLocation && matchesType && matchesDuration && matchesField;
   });
+  
+  if (sortBy === 'recent') {
+  } else if (sortBy === 'oldest') {
+    processedInternships.reverse();
+  }
 
   return (
     <>
@@ -255,64 +276,97 @@ const Internships = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="mb-6 flex justify-between items-center">
             <h2 className="text-xl font-bold text-gray-900">
-              {filteredInternships.length} Internships Found
+              {processedInternships.length} Internships Found
             </h2>
             <div className="flex items-center">
               <span className="text-sm text-gray-600 mr-2">Sort by:</span>
-              <button className="text-sm text-gray-800 font-medium flex items-center">
-                Most Recent
-                <ChevronDown className="ml-1 h-4 w-4" />
-              </button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="text-sm text-gray-800 font-medium flex items-center">
+                    {sortBy === 'recent' ? 'Most Recent' : 'Oldest First'}
+                    <ChevronDown className="ml-1 h-4 w-4" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-0">
+                  <div className="py-1">
+                    <button 
+                      className={`w-full text-left px-4 py-2 text-sm ${sortBy === 'recent' ? 'bg-blue-50 text-sattejli-blue' : 'text-gray-700 hover:bg-gray-100'}`} 
+                      onClick={() => setSortBy('recent')}
+                    >
+                      Most Recent
+                    </button>
+                    <button 
+                      className={`w-full text-left px-4 py-2 text-sm ${sortBy === 'oldest' ? 'bg-blue-50 text-sattejli-blue' : 'text-gray-700 hover:bg-gray-100'}`} 
+                      onClick={() => setSortBy('oldest')}
+                    >
+                      Oldest First
+                    </button>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
           
           <div className="space-y-6">
-            {filteredInternships.length > 0 ? (
-              filteredInternships.map((internship) => (
-                <Link to={`/internships/${internship.id}`} key={internship.id}>
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow card-hover">
-                    <div className="flex">
-                      <div className="bg-gray-100 w-12 h-12 rounded flex items-center justify-center mr-4">
-                        <span className="font-bold text-gray-700">{internship.logo}</span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex flex-col md:flex-row md:justify-between md:items-start">
-                          <div>
-                            <h3 className="text-lg font-bold text-gray-900">{internship.title}</h3>
-                            <p className="text-gray-600 mb-2">{internship.company}</p>
-                          </div>
-                          <div className="flex items-center mb-2 md:mb-0">
-                            <span className="text-sm font-medium px-3 py-1 bg-blue-50 text-sattejli-blue rounded-full">
-                              {internship.type}
-                            </span>
-                          </div>
+            {processedInternships.length > 0 ? (
+              processedInternships.map((internship) => (
+                <div key={internship.id} className="relative">
+                  <Link to={`/internships/${internship.id}`}>
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow card-hover">
+                      <div className="flex">
+                        <div className="bg-gray-100 w-12 h-12 rounded flex items-center justify-center mr-4">
+                          <span className="font-bold text-gray-700">{internship.logo}</span>
                         </div>
-                        
-                        <div className="flex flex-wrap gap-2 my-3">
-                          {internship.tags.map((tag, index) => (
-                            <span key={index} className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                        
-                        <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center mt-3 text-sm">
-                          <div className="flex space-x-4">
-                            <span className="flex items-center text-gray-500">
-                              <MapPin className="h-4 w-4 mr-1" />
-                              {internship.location}
-                            </span>
-                            <span className="flex items-center text-gray-500">
-                              <Clock className="h-4 w-4 mr-1" />
-                              {internship.duration}
-                            </span>
+                        <div className="flex-1">
+                          <div className="flex flex-col md:flex-row md:justify-between md:items-start">
+                            <div>
+                              <h3 className="text-lg font-bold text-gray-900">{internship.title}</h3>
+                              <p className="text-gray-600 mb-2">{internship.company}</p>
+                            </div>
+                            <div className="flex items-center mb-2 md:mb-0">
+                              <span className="text-sm font-medium px-3 py-1 bg-blue-50 text-sattejli-blue rounded-full">
+                                {internship.type}
+                              </span>
+                            </div>
                           </div>
-                          <span className="text-gray-400 mt-2 sm:mt-0">Posted {internship.postedDate}</span>
+                          
+                          <div className="flex flex-wrap gap-2 my-3">
+                            {internship.tags.map((tag, index) => (
+                              <span key={index} className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                          
+                          <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center mt-3 text-sm">
+                            <div className="flex space-x-4">
+                              <span className="flex items-center text-gray-500">
+                                <MapPin className="h-4 w-4 mr-1" />
+                                {internship.location}
+                              </span>
+                              <span className="flex items-center text-gray-500">
+                                <Clock className="h-4 w-4 mr-1" />
+                                {internship.duration}
+                              </span>
+                            </div>
+                            <span className="text-gray-400 mt-2 sm:mt-0">Posted {internship.postedDate}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                  <button 
+                    className="absolute top-4 right-4 p-2 rounded-full bg-white shadow-sm hover:bg-gray-50 z-10"
+                    onClick={(e) => handleSaveInternship(e, internship.id)}
+                    title={savedInternships.includes(internship.id) ? "Remove from saved" : "Save internship"}
+                  >
+                    <Bookmark 
+                      className="h-5 w-5" 
+                      fill={savedInternships.includes(internship.id) ? "#4F46E5" : "none"}
+                      stroke={savedInternships.includes(internship.id) ? "#4F46E5" : "currentColor"}
+                    />
+                  </button>
+                </div>
               ))
             ) : (
               <div className="text-center py-8 bg-white rounded-lg shadow-sm">

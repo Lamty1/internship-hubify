@@ -12,6 +12,9 @@ import Internships from "./pages/Internships";
 import InternshipDetail from "./pages/InternshipDetail";
 import StudentDashboard from "./pages/StudentDashboard";
 import CompanyDashboard from "./pages/CompanyDashboard";
+import StudentProfile from "./pages/StudentProfile";
+import CompanyProfile from "./pages/CompanyProfile";
+import PostInternship from "./pages/PostInternship";
 // Add any additional page imports here
 
 const queryClient = new QueryClient();
@@ -32,14 +35,15 @@ const App = () => (
           
           {/* Student Routes */}
           <Route path="/student-dashboard" element={<StudentDashboard />} />
-          <Route path="/student-profile" element={<StudentDashboard />} /> {/* Temporarily the same page */}
-          <Route path="/student-onboarding" element={<StudentDashboard />} /> {/* Temporarily the same page */}
+          <Route path="/student-profile" element={<StudentProfile />} />
+          <Route path="/student-onboarding" element={<StudentProfile />} />
           
           {/* Company Routes */}
           <Route path="/company-dashboard" element={<CompanyDashboard />} />
-          <Route path="/post-internship" element={<CompanyDashboard />} /> {/* Temporarily the same page */}
-          <Route path="/edit-internship/:id" element={<CompanyDashboard />} /> {/* Temporarily the same page */}
-          <Route path="/company-onboarding" element={<CompanyDashboard />} /> {/* Temporarily the same page */}
+          <Route path="/post-internship" element={<PostInternship />} />
+          <Route path="/company-profile" element={<CompanyProfile />} />
+          <Route path="/edit-internship/:id" element={<PostInternship />} />
+          <Route path="/company-onboarding" element={<CompanyProfile />} />
           
           {/* Catch-all Route */}
           <Route path="*" element={<NotFound />} />

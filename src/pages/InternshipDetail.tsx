@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   Calendar,
@@ -13,9 +14,13 @@ import {
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 const InternshipDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
+  const [isSaved, setIsSaved] = useState(false);
 
   // Mock internship data
   const internship = {
@@ -41,6 +46,26 @@ const InternshipDetail = () => {
     ],
   };
 
+  const handleSave = () => {
+    setIsSaved(!isSaved);
+    toast({
+      title: isSaved ? "Removed from saved" : "Added to saved",
+      description: isSaved ? "Internship has been removed from your saved list." : "Internship has been added to your saved list.",
+    });
+  };
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast({
+      title: "Link copied to clipboard",
+      description: "You can now share this internship with others.",
+    });
+  };
+
+  const handleApply = () => {
+    window.location.href = "/student-dashboard";
+  };
+
   return (
     <>
       <Navbar />
@@ -58,11 +83,16 @@ const InternshipDetail = () => {
                 <span className="text-gray-700">{internship.company}</span>
               </div>
               <div className="flex items-center space-x-4">
-                <button className="flex items-center text-gray-600 hover:text-sattejli-blue">
+                <button onClick={handleShare} className="flex items-center text-gray-600 hover:text-sattejli-blue">
                   <Share2 className="h-5 w-5 mr-2" /> Share
                 </button>
-                <button className="flex items-center text-gray-600 hover:text-sattejli-blue">
-                  <Bookmark className="h-5 w-5 mr-2" /> Save
+                <button onClick={handleSave} className="flex items-center text-gray-600 hover:text-sattejli-blue">
+                  <Bookmark 
+                    className="h-5 w-5 mr-2" 
+                    fill={isSaved ? "#4F46E5" : "none"}
+                    stroke={isSaved ? "#4F46E5" : "currentColor"}
+                  /> 
+                  {isSaved ? "Saved" : "Save"}
                 </button>
               </div>
             </div>
@@ -113,7 +143,12 @@ const InternshipDetail = () => {
               </ul>
             </div>
 
-            <button className="btn-primary mt-8">Apply Now</button>
+            <Button 
+              className="mt-8 bg-sattejli-blue hover:bg-blue-600"
+              onClick={handleApply}
+            >
+              Apply Now
+            </Button>
           </div>
         </div>
       </main>
