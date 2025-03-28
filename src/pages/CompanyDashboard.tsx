@@ -15,10 +15,13 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 const CompanyDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Mock data for demonstration
   const companyInfo = {
@@ -110,6 +113,26 @@ const CompanyDashboard = () => {
         return 'bg-gray-100 text-gray-800';
     }
   };
+  
+  const handleEditProfile = () => {
+    navigate('/company-profile');
+  };
+  
+  const handlePostInternship = () => {
+    navigate('/post-internship');
+  };
+  
+  const viewApplicantProfile = (id: number) => {
+    navigate(`/applicant-profile/${id}`);
+  };
+  
+  const handleContactApplicant = (name: string) => {
+    toast({
+      title: "Contact initiated",
+      description: `Opening email to contact ${name}...`,
+    });
+    // In a real app, this would open an email compose window or an in-app messaging system
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -194,11 +217,9 @@ const CompanyDashboard = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-              <Link to="/post-internship">
-                <Button className="bg-sattejli-blue hover:bg-blue-600">
-                  <Plus className="mr-2 h-4 w-4" /> Post New Internship
-                </Button>
-              </Link>
+              <Button className="bg-sattejli-blue hover:bg-blue-600" onClick={handlePostInternship}>
+                <Plus className="mr-2 h-4 w-4" /> Post New Internship
+              </Button>
             </div>
 
             {/* Stats Cards */}
@@ -327,7 +348,12 @@ const CompanyDashboard = () => {
                     {applications.map((application) => (
                       <tr key={application.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{application.name}</div>
+                          <div 
+                            className="text-sm font-medium text-gray-900 cursor-pointer hover:text-sattejli-blue"
+                            onClick={() => viewApplicantProfile(application.id)}
+                          >
+                            {application.name}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">{application.position}</div>
@@ -339,9 +365,21 @@ const CompanyDashboard = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{application.date}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button className="text-sattejli-blue hover:text-blue-700 mr-3">View</button>
-                          <button className="text-green-600 hover:text-green-900 mr-3">Accept</button>
-                          <button className="text-red-600 hover:text-red-900">Reject</button>
+                          <button 
+                            className="text-sattejli-blue hover:text-blue-700 mr-3"
+                            onClick={() => viewApplicantProfile(application.id)}
+                          >
+                            View
+                          </button>
+                          <button 
+                            className="text-green-600 hover:text-green-900 mr-3"
+                            onClick={() => handleContactApplicant(application.name)}
+                          >
+                            Contact
+                          </button>
+                          <button className="text-red-600 hover:text-red-900">
+                            Reject
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -365,7 +403,9 @@ const CompanyDashboard = () => {
                     <h2 className="text-xl font-bold text-gray-900">{companyInfo.name}</h2>
                     <p className="text-gray-600">{companyInfo.industry} • {companyInfo.location}</p>
                   </div>
-                  <Button className="ml-auto bg-sattejli-blue hover:bg-blue-600">Edit Profile</Button>
+                  <Button className="ml-auto bg-sattejli-blue hover:bg-blue-600" onClick={handleEditProfile}>
+                    Edit Profile
+                  </Button>
                 </div>
               </div>
               
