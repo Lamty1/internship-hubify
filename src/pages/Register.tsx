@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Student, Building2, Check } from 'lucide-react';
+import { ArrowLeft, GraduationCap, Building2, Check } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
@@ -83,7 +83,7 @@ const Register = () => {
           <Tabs defaultValue="student" className="mb-6" onValueChange={setUserType}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="student" className="flex items-center justify-center">
-                <Student className="mr-2 h-4 w-4" /> I'm a Student
+                <GraduationCap className="mr-2 h-4 w-4" /> I'm a Student
               </TabsTrigger>
               <TabsTrigger value="company" className="flex items-center justify-center">
                 <Building2 className="mr-2 h-4 w-4" /> We're a Company
