@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import Index from '@/pages/Index';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
-import CompanyDashboard from '@/pages/CompanyDashboard';
+import CompanyDashboard from '@/pages/company/Dashboard';
 import StudentDashboard from '@/pages/StudentDashboard';
 import Internships from '@/pages/Internships';
 import InternshipDetail from '@/pages/InternshipDetail';
