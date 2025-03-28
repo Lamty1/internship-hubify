@@ -1,219 +1,237 @@
 
-import { ArrowRight, BriefcaseIcon, GraduationCap, Search, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { Button } from '@/components/ui/button';
+import { ArrowRight, Search, GraduationCap, Building2, Brain, ArrowUpRight } from 'lucide-react';
+
+const FeatureCard = ({ icon, title, description }) => (
+  <div className="bg-white p-6 rounded-lg shadow-md">
+    <div className="h-12 w-12 flex items-center justify-center rounded-full bg-sattejli-blue/10 text-sattejli-blue mb-4">
+      {icon}
+    </div>
+    <h3 className="text-lg font-bold mb-2">{title}</h3>
+    <p className="text-gray-600">{description}</p>
+  </div>
+);
+
+const TestimonialCard = ({ quote, name, role, company }) => (
+  <div className="bg-white p-6 rounded-lg shadow-md">
+    <p className="italic text-gray-600 mb-4">"{quote}"</p>
+    <div>
+      <p className="font-semibold">{name}</p>
+      <p className="text-sm text-gray-500">{role}, {company}</p>
+    </div>
+  </div>
+);
 
 const Index = () => {
   return (
     <>
       <Navbar />
-      <main className="pt-16">
-        {/* Hero Section */}
-        <section className="bg-gradient-to-br from-blue-50 to-sky-100 py-20 md:py-32">
-          <div className="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
-            <div className="animate-fade-in">
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-                Find Your Perfect <span className="text-sattejli-blue">Internship</span> Opportunity
-              </h1>
-              <p className="text-xl text-gray-700 mb-8">
-                Connect with top companies in Tunisia and launch your career with meaningful internship experiences.
-              </p>
-              <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                <Link to="/register">
-                  <Button size="lg" className="w-full sm:w-auto bg-sattejli-blue hover:bg-blue-600">
-                    Get Started <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
+      
+      {/* Hero Section */}
+      <section className="pt-24 pb-16 bg-gradient-to-br from-sattejli-blue to-sattejli-indigo text-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6">Find Your Perfect Internship in Tunisia</h1>
+            <p className="text-xl mb-8">
+              Connect with top companies and kickstart your career with Sattejli - Tunisia's leading internship platform.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/register">
+                <Button size="lg" className="bg-white text-sattejli-blue hover:bg-blue-50">
+                  Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+              <Link to="/internships">
+                <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10">
+                  Browse Internships
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Search Section */}
+      <section className="py-12 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white p-6 rounded-lg shadow-md -mt-20">
+              <div className="mb-4">
+                <h2 className="text-xl font-bold mb-4">Find Your Next Opportunity</h2>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input 
+                    type="text"
+                    placeholder="Search for internships, companies, or keywords"
+                    className="pl-10 pr-4 py-3 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sattejli-blue focus:border-transparent"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <select className="input-field">
+                  <option value="">Location</option>
+                  <option value="tunis">Tunis</option>
+                  <option value="sousse">Sousse</option>
+                  <option value="sfax">Sfax</option>
+                  <option value="remote">Remote</option>
+                </select>
+                <select className="input-field">
+                  <option value="">Category</option>
+                  <option value="technology">Technology</option>
+                  <option value="marketing">Marketing</option>
+                  <option value="finance">Finance</option>
+                  <option value="design">Design</option>
+                </select>
+                <select className="input-field">
+                  <option value="">Duration</option>
+                  <option value="1-3">1-3 months</option>
+                  <option value="3-6">3-6 months</option>
+                  <option value="6+">6+ months</option>
+                </select>
                 <Link to="/internships">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto border-sattejli-blue text-sattejli-blue hover:bg-blue-50">
-                    Browse Internships
+                  <Button className="w-full bg-sattejli-blue hover:bg-blue-600">
+                    Search
                   </Button>
                 </Link>
               </div>
             </div>
-            <div className="hidden md:block">
-              <img 
-                src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1471&q=80" 
-                alt="Students collaborating" 
-                className="rounded-lg shadow-xl float"
+          </div>
+        </div>
+      </section>
+
+      {/* AI Matching Feature Highlight */}
+      <section className="py-12 bg-gradient-to-br from-sattejli-indigo/5 to-sattejli-blue/5">
+        <div className="container mx-auto px-4">
+          <div className="max-w-5xl mx-auto">
+            <div className="bg-white p-8 rounded-lg shadow-md border border-sattejli-blue/10">
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <div className="md:w-1/2">
+                  <div className="bg-sattejli-blue/10 p-3 rounded-lg inline-block mb-4">
+                    <Brain className="h-8 w-8 text-sattejli-blue" />
+                  </div>
+                  <h2 className="text-2xl font-bold mb-4">New: AI-Powered Internship Matching</h2>
+                  <p className="text-gray-600 mb-6">
+                    Upload your CV and let our advanced AI technology analyze your skills and experience to find the perfect internship matches for you. Get personalized recommendations with match scores based on your profile.
+                  </p>
+                  <Link to="/register">
+                    <Button className="bg-sattejli-blue hover:bg-blue-600">
+                      Try AI Matching <ArrowUpRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+                <div className="md:w-1/2 bg-gray-50 p-6 rounded-lg">
+                  <h3 className="font-semibold mb-3">How it works:</h3>
+                  <ul className="space-y-3">
+                    <li className="flex items-start">
+                      <span className="bg-sattejli-blue/20 text-sattejli-blue font-bold rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5">1</span>
+                      <span>Upload your CV or complete your profile</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="bg-sattejli-blue/20 text-sattejli-blue font-bold rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5">2</span>
+                      <span>Our AI analyzes your skills and experience</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="bg-sattejli-blue/20 text-sattejli-blue font-bold rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5">3</span>
+                      <span>Get personalized internship recommendations</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="bg-sattejli-blue/20 text-sattejli-blue font-bold rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5">4</span>
+                      <span>Apply with one click to your best matches</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Features */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">Why Choose Sattejli?</h2>
+              <p className="text-gray-600 text-lg">
+                We connect talented students with the best companies in Tunisia
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <FeatureCard 
+                icon={<GraduationCap className="h-6 w-6" />}
+                title="For Students"
+                description="Discover, apply, and track internship applications all in one place. Build your professional profile and get noticed by top companies."
+              />
+              <FeatureCard 
+                icon={<Building2 className="h-6 w-6" />}
+                title="For Companies"
+                description="Post internship opportunities and find the best talent. Streamline your recruitment process and connect with qualified candidates."
+              />
+              <FeatureCard 
+                icon={<Brain className="h-6 w-6" />}
+                title="Smart Matching"
+                description="Our AI-powered matching algorithm helps connect the right students with the right opportunities based on skills and preferences."
               />
             </div>
           </div>
-        </section>
-
-        {/* Stats Section */}
-        <section className="py-16 bg-white">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              <div>
-                <p className="text-4xl font-bold text-sattejli-blue mb-2">500+</p>
-                <p className="text-gray-600">Active Internships</p>
-              </div>
-              <div>
-                <p className="text-4xl font-bold text-sattejli-blue mb-2">200+</p>
-                <p className="text-gray-600">Partner Companies</p>
-              </div>
-              <div>
-                <p className="text-4xl font-bold text-sattejli-blue mb-2">5,000+</p>
-                <p className="text-gray-600">Registered Students</p>
-              </div>
-              <div>
-                <p className="text-4xl font-bold text-sattejli-blue mb-2">95%</p>
-                <p className="text-gray-600">Satisfaction Rate</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* How It Works */}
-        <section className="py-20 bg-gray-50">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">How Sattejli Works</h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                We make it easy to find and apply for internships that match your skills and career goals.
+        </div>
+      </section>
+      
+      {/* Testimonials */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">Success Stories</h2>
+              <p className="text-gray-600 text-lg">
+                Hear from students and companies who found success with Sattejli
               </p>
             </div>
-            
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="bg-white p-8 rounded-lg shadow-md text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Search className="h-8 w-8 text-sattejli-blue" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Search Opportunities</h3>
-                <p className="text-gray-600">
-                  Browse through hundreds of internship opportunities across various fields and locations.
-                </p>
-              </div>
-              
-              <div className="bg-white p-8 rounded-lg shadow-md text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <GraduationCap className="h-8 w-8 text-sattejli-blue" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Create Your Profile</h3>
-                <p className="text-gray-600">
-                  Build your digital resume, highlight your skills, and showcase your projects and accomplishments.
-                </p>
-              </div>
-              
-              <div className="bg-white p-8 rounded-lg shadow-md text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <BriefcaseIcon className="h-8 w-8 text-sattejli-blue" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Apply & Connect</h3>
-                <p className="text-gray-600">
-                  Apply directly through our platform and connect with companies looking for talented students like you.
-                </p>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <TestimonialCard 
+                quote="Thanks to Sattejli, I found an amazing internship that aligned perfectly with my career goals. The platform was easy to use and I received a response within days."
+                name="Sarra Ben Salah"
+                role="Computer Science Student"
+                company="INSAT"
+              />
+              <TestimonialCard 
+                quote="As a growing tech company, finding the right interns was challenging until we discovered Sattejli. We've hired multiple talented students who have become valuable team members."
+                name="Mehdi Trabelsi"
+                role="HR Manager"
+                company="TechWave Tunisia"
+              />
             </div>
           </div>
-        </section>
-
-        {/* Featured Internships */}
-        <section className="py-20 bg-white">
-          <div className="container mx-auto px-4">
-            <div className="flex justify-between items-center mb-10">
-              <h2 className="text-3xl font-bold text-gray-900">Featured Internships</h2>
-              <Link to="/internships" className="text-sattejli-blue hover:text-blue-700 flex items-center">
-                View all
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </div>
-            
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[1, 2, 3].map((i) => (
-                <Link to="/internships/1" key={i} className="block">
-                  <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow card-hover">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="bg-gray-100 w-12 h-12 rounded flex items-center justify-center">
-                        <span className="font-bold text-gray-700">C{i}</span>
-                      </div>
-                      <span className="text-sm font-medium text-sattejli-emerald px-3 py-1 bg-green-50 rounded-full">
-                        Full-time
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">Software Development Intern</h3>
-                    <p className="text-gray-500 mb-4">TechCorp Tunisia</p>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">JavaScript</span>
-                      <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">React</span>
-                      <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">Node.js</span>
-                    </div>
-                    <div className="flex justify-between text-sm text-gray-500">
-                      <span>Tunis, Tunisia</span>
-                      <span>Posted 2 days ago</span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Testimonials */}
-        <section className="py-20 bg-gray-50">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">What Our Users Say</h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Hear from students and companies who have found success with Sattejli.
-              </p>
-            </div>
-            
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="bg-white p-8 rounded-lg shadow-md">
-                <div className="flex items-center mb-6">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full mr-4"></div>
-                  <div>
-                    <h4 className="font-bold text-gray-900">Ahmed Ben Ali</h4>
-                    <p className="text-gray-600">Computer Science Student</p>
-                  </div>
-                </div>
-                <p className="text-gray-700 italic">
-                  "Thanks to Sattejli, I found an amazing internship at a tech startup that aligned perfectly with my career goals. The platform made it easy to showcase my skills and connect with companies."
-                </p>
-              </div>
-              
-              <div className="bg-white p-8 rounded-lg shadow-md">
-                <div className="flex items-center mb-6">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full mr-4"></div>
-                  <div>
-                    <h4 className="font-bold text-gray-900">Leila Mansour</h4>
-                    <p className="text-gray-600">HR Manager, InnoTech</p>
-                  </div>
-                </div>
-                <p className="text-gray-700 italic">
-                  "As a growing company, finding the right talent is crucial. Sattejli has helped us connect with motivated students who bring fresh perspectives to our team. The quality of applicants has been exceptional."
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA */}
-        <section className="py-20 bg-gradient-to-r from-sattejli-blue to-sattejli-indigo text-white">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-6">Ready to Start Your Career Journey?</h2>
-            <p className="text-xl mb-8 max-w-2xl mx-auto">
-              Join thousands of students and companies already using Sattejli to find their perfect match.
+        </div>
+      </section>
+      
+      {/* CTA */}
+      <section className="py-16 bg-sattejli-blue text-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-3xl font-bold mb-4">Ready to Begin Your Journey?</h2>
+            <p className="text-lg mb-8">
+              Join thousands of students and companies already using Sattejli to connect and create opportunities.
             </p>
-            <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/register">
-                <Button size="lg" variant="secondary" className="w-full sm:w-auto bg-white text-sattejli-blue hover:bg-blue-50">
-                  Sign Up Now
+                <Button size="lg" className="bg-white text-sattejli-blue hover:bg-blue-50">
+                  Create an Account
                 </Button>
               </Link>
-              <Link to="/about">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto border-white text-white hover:bg-white/10">
-                  Learn More
+              <Link to="/internships">
+                <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10">
+                  Explore Internships
                 </Button>
               </Link>
             </div>
           </div>
-        </section>
-      </main>
+        </div>
+      </section>
+      
       <Footer />
     </>
   );

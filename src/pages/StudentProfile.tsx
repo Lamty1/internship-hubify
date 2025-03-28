@@ -1,7 +1,6 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Upload, User, BookOpen, Calendar, Mail, Phone, MapPin, Globe, Briefcase } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const StudentProfile = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -25,6 +25,26 @@ const StudentProfile = () => {
   });
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
+
+  useEffect(() => {
+    const savedProfile = localStorage.getItem('studentProfile');
+    if (savedProfile) {
+      try {
+        const parsedProfile = JSON.parse(savedProfile);
+        setFormData(parsedProfile);
+        
+        if (parsedProfile.profilePicture) {
+          setProfilePicture(parsedProfile.profilePicture);
+        }
+        
+        if (parsedProfile.resumeFile) {
+          setResumeFile({ name: 'Resume.pdf', size: 1024 } as File);
+        }
+      } catch (error) {
+        console.error("Error loading saved profile", error);
+      }
+    }
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -66,14 +86,40 @@ const StudentProfile = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate form submission
+    
+    const profileDataToSave = {
+      ...formData,
+      profilePicture,
+      resumeFile: resumeFile ? true : false,
+    };
+    
+    localStorage.setItem('studentProfile', JSON.stringify(profileDataToSave));
+    
+    const requiredFields = [
+      'firstName', 'lastName', 'email', 'phone', 
+      'university', 'degree', 'fieldOfStudy', 'graduationDate', 
+      'skills', 'resumeFile'
+    ];
+    
+    const filledFields = requiredFields.filter(field => {
+      if (field === 'skills') {
+        return formData.skills && formData.skills.length > 0 && formData.skills[0] !== '';
+      }
+      if (field === 'resumeFile') {
+        return resumeFile !== null;
+      }
+      return formData[field as keyof typeof formData] && formData[field as keyof typeof formData] !== '';
+    });
+    
+    const percentage = Math.round((filledFields.length / requiredFields.length) * 100);
+    
     toast({
       title: "Profile updated",
-      description: "Your profile has been successfully updated.",
+      description: `Your profile has been successfully updated. Profile completion: ${percentage}%`,
     });
-    // Redirect to dashboard after 2 seconds
+    
     setTimeout(() => {
-      window.location.href = '/student-dashboard';
+      navigate('/student-dashboard');
     }, 2000);
   };
 

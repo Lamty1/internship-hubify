@@ -1,393 +1,369 @@
+
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { 
   Search, 
-  MapPin, 
-  Briefcase, 
-  Clock,
   Filter, 
-  SlidersHorizontal,
-  X, 
+  MapPin, 
+  Calendar, 
+  Briefcase, 
+  Clock, 
   ChevronDown,
-  Bookmark
+  Bookmark,
+  XCircle
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { useToast } from '@/hooks/use-toast';
 
+// Mock data for internships
 const MOCK_INTERNSHIPS = [
   {
     id: 1,
-    title: 'Frontend Development Intern',
+    title: 'Frontend Developer Intern',
     company: 'TechCorp Tunisia',
+    logo: 'TC',
     location: 'Tunis, Tunisia',
     type: 'Full-time',
     duration: '3 months',
-    tags: ['React', 'JavaScript', 'HTML/CSS'],
-    logo: 'TC',
-    postedDate: '2 days ago',
+    postedDate: '2023-08-15',
+    saved: false
   },
   {
     id: 2,
     title: 'UI/UX Design Intern',
     company: 'Creative Solutions',
-    location: 'Sousse, Tunisia',
+    logo: 'CS',
+    location: 'Remote',
     type: 'Part-time',
     duration: '6 months',
-    tags: ['Figma', 'UI Design', 'User Research'],
-    logo: 'CS',
-    postedDate: '1 week ago',
+    postedDate: '2023-08-12',
+    saved: false
   },
   {
     id: 3,
-    title: 'Data Science Intern',
-    company: 'DataTech',
-    location: 'Remote',
+    title: 'Marketing Intern',
+    company: 'Global Marketing Agency',
+    logo: 'GM',
+    location: 'Sousse, Tunisia',
     type: 'Full-time',
     duration: '4 months',
-    tags: ['Python', 'Machine Learning', 'SQL'],
-    logo: 'DT',
-    postedDate: '3 days ago',
+    postedDate: '2023-08-10',
+    saved: false
   },
   {
     id: 4,
     title: 'Backend Developer Intern',
     company: 'InnovateTN',
+    logo: 'IT',
     location: 'Sfax, Tunisia',
     type: 'Full-time',
-    duration: '6 months',
-    tags: ['Node.js', 'Express', 'MongoDB'],
-    logo: 'IT',
-    postedDate: 'Today',
+    duration: '3 months',
+    postedDate: '2023-08-08',
+    saved: false
   },
   {
     id: 5,
-    title: 'Marketing Intern',
-    company: 'Global Marketing Agency',
+    title: 'Data Science Intern',
+    company: 'DataTech',
+    logo: 'DT',
     location: 'Tunis, Tunisia',
-    type: 'Part-time',
-    duration: '3 months',
-    tags: ['Social Media', 'Content Creation', 'SEO'],
-    logo: 'GM',
-    postedDate: '1 week ago',
+    type: 'Full-time',
+    duration: '6 months',
+    postedDate: '2023-08-05',
+    saved: false
   },
   {
     id: 6,
     title: 'Mobile App Development Intern',
     company: 'AppWorks',
+    logo: 'AW',
     location: 'Remote',
     type: 'Full-time',
-    duration: '5 months',
-    tags: ['React Native', 'Flutter', 'iOS/Android'],
-    logo: 'AW',
-    postedDate: '5 days ago',
+    duration: '3 months',
+    postedDate: '2023-08-02',
+    saved: false
   },
 ];
 
 const Internships = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [location, setLocation] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [sortBy, setSortBy] = useState('recent');
-  const [savedInternships, setSavedInternships] = useState<number[]>([]);
-  const [filters, setFilters] = useState({
-    type: '',
-    duration: '',
-    fields: [] as string[],
-  });
-
-  const handleFieldToggle = (field: string) => {
-    setFilters(prev => {
-      const fields = prev.fields.includes(field)
-        ? prev.fields.filter(f => f !== field)
-        : [...prev.fields, field];
-      return { ...prev, fields };
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [sortOption, setSortOption] = useState('newest');
+  const [internships, setInternships] = useState(MOCK_INTERNSHIPS);
+  const { toast } = useToast();
+  
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
     });
   };
-
-  const resetFilters = () => {
-    setFilters({
-      type: '',
-      duration: '',
-      fields: [],
-    });
-  };
-
-  const handleSaveInternship = (e: React.MouseEvent, internshipId: number) => {
+  
+  const handleSaveInternship = (e: React.MouseEvent, id: number) => {
     e.preventDefault();
     e.stopPropagation();
     
-    setSavedInternships(prev => {
-      if (prev.includes(internshipId)) {
-        return prev.filter(id => id !== internshipId);
-      } else {
-        return [...prev, internshipId];
-      }
-    });
+    setInternships(prevInternships => 
+      prevInternships.map(internship => 
+        internship.id === id 
+          ? { ...internship, saved: !internship.saved } 
+          : internship
+      )
+    );
+    
+    const internship = internships.find(i => i.id === id);
+    if (internship) {
+      toast({
+        title: internship.saved ? "Removed from saved" : "Added to saved",
+        description: internship.saved 
+          ? "Internship has been removed from your saved list" 
+          : "Internship has been added to your saved list",
+      });
+    }
   };
-
-  let processedInternships = [...MOCK_INTERNSHIPS];
   
-  processedInternships = processedInternships.filter(internship => {
-    const matchesSearch = internship.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      internship.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      internship.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+  const handleSort = (option: string) => {
+    setSortOption(option);
     
-    const matchesLocation = !location || internship.location.toLowerCase().includes(location.toLowerCase());
+    let sorted = [...internships];
     
-    const matchesType = !filters.type || internship.type === filters.type;
+    switch (option) {
+      case 'newest':
+        sorted.sort((a, b) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime());
+        break;
+      case 'oldest':
+        sorted.sort((a, b) => new Date(a.postedDate).getTime() - new Date(b.postedDate).getTime());
+        break;
+      case 'company-az':
+        sorted.sort((a, b) => a.company.localeCompare(b.company));
+        break;
+      case 'company-za':
+        sorted.sort((a, b) => b.company.localeCompare(a.company));
+        break;
+      default:
+        break;
+    }
     
-    const matchesDuration = !filters.duration || internship.duration.includes(filters.duration);
-    
-    const matchesField = filters.fields.length === 0 || 
-      filters.fields.some(field => internship.tags.includes(field));
-    
-    return matchesSearch && matchesLocation && matchesType && matchesDuration && matchesField;
-  });
-  
-  if (sortBy === 'recent') {
-  } else if (sortBy === 'oldest') {
-    processedInternships.reverse();
-  }
+    setInternships(sorted);
+  };
 
   return (
     <>
       <Navbar />
       <main className="pt-16 min-h-screen bg-gray-50">
-        <div className="bg-gradient-to-r from-sattejli-blue to-sattejli-indigo py-16">
-          <div className="container mx-auto px-4">
-            <h1 className="text-3xl font-bold text-white mb-6">Find Your Perfect Internship</h1>
-            
-            <div className="bg-white p-4 rounded-lg shadow-md">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <Search className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    className="input-field pl-10 w-full"
-                    placeholder="Job title, company, or keyword"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
+        <div className="container mx-auto px-4 py-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">Find Internships</h1>
+          
+          <div className="flex flex-col lg:flex-row gap-6">
+            <div className="lg:w-1/4">
+              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-bold text-gray-900">Filters</h2>
+                  <button 
+                    className="lg:hidden text-gray-500 hover:text-gray-700"
+                    onClick={() => setFilterOpen(!filterOpen)}
+                  >
+                    <Filter className="h-5 w-5" />
+                  </button>
                 </div>
                 
-                <div className="relative md:w-1/3">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <MapPin className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    className="input-field pl-10 w-full"
-                    placeholder="City or 'Remote'"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                  />
-                </div>
-                
-                <Button 
-                  className="bg-sattejli-blue hover:bg-blue-600 md:w-auto"
-                  onClick={() => setShowFilters(!showFilters)}
-                >
-                  <Filter className="h-5 w-5 mr-2" />
-                  Filters
-                </Button>
-              </div>
-              
-              {showFilters && (
-                <div className="mt-4 p-4 border-t border-gray-200 animate-fade-in">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-medium flex items-center">
-                      <SlidersHorizontal className="h-4 w-4 mr-2" />
-                      Advanced Filters
-                    </h3>
-                    <Button 
-                      variant="ghost" 
-                      className="h-8 text-gray-500 hover:text-gray-700"
-                      onClick={resetFilters}
-                    >
-                      Reset
-                    </Button>
+                <div className={`${filterOpen ? 'block' : 'hidden lg:block'}`}>
+                  <div className="mb-4">
+                    <h3 className="font-medium text-gray-700 mb-2">Location</h3>
+                    <div className="space-y-2">
+                      <label className="flex items-center">
+                        <input type="checkbox" className="rounded border-gray-300 text-sattejli-blue focus:ring-sattejli-blue" />
+                        <span className="ml-2 text-gray-600">Tunis</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input type="checkbox" className="rounded border-gray-300 text-sattejli-blue focus:ring-sattejli-blue" />
+                        <span className="ml-2 text-gray-600">Sousse</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input type="checkbox" className="rounded border-gray-300 text-sattejli-blue focus:ring-sattejli-blue" />
+                        <span className="ml-2 text-gray-600">Sfax</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input type="checkbox" className="rounded border-gray-300 text-sattejli-blue focus:ring-sattejli-blue" />
+                        <span className="ml-2 text-gray-600">Remote</span>
+                      </label>
+                    </div>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Internship Type
+                  <div className="mb-4">
+                    <h3 className="font-medium text-gray-700 mb-2">Duration</h3>
+                    <div className="space-y-2">
+                      <label className="flex items-center">
+                        <input type="checkbox" className="rounded border-gray-300 text-sattejli-blue focus:ring-sattejli-blue" />
+                        <span className="ml-2 text-gray-600">1-3 months</span>
                       </label>
-                      <select
-                        className="input-field w-full"
-                        value={filters.type}
-                        onChange={(e) => setFilters({...filters, type: e.target.value})}
-                      >
-                        <option value="">All Types</option>
-                        <option value="Full-time">Full-time</option>
-                        <option value="Part-time">Part-time</option>
-                        <option value="Flexible">Flexible</option>
-                      </select>
+                      <label className="flex items-center">
+                        <input type="checkbox" className="rounded border-gray-300 text-sattejli-blue focus:ring-sattejli-blue" />
+                        <span className="ml-2 text-gray-600">3-6 months</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input type="checkbox" className="rounded border-gray-300 text-sattejli-blue focus:ring-sattejli-blue" />
+                        <span className="ml-2 text-gray-600">6+ months</span>
+                      </label>
                     </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Duration
+                  </div>
+                  
+                  <div className="mb-4">
+                    <h3 className="font-medium text-gray-700 mb-2">Type</h3>
+                    <div className="space-y-2">
+                      <label className="flex items-center">
+                        <input type="checkbox" className="rounded border-gray-300 text-sattejli-blue focus:ring-sattejli-blue" />
+                        <span className="ml-2 text-gray-600">Full-time</span>
                       </label>
-                      <select
-                        className="input-field w-full"
-                        value={filters.duration}
-                        onChange={(e) => setFilters({...filters, duration: e.target.value})}
-                      >
-                        <option value="">Any Duration</option>
-                        <option value="1 month">1 month</option>
-                        <option value="3 months">3 months</option>
-                        <option value="6 months">6 months</option>
-                        <option value="1 year">1 year</option>
-                      </select>
+                      <label className="flex items-center">
+                        <input type="checkbox" className="rounded border-gray-300 text-sattejli-blue focus:ring-sattejli-blue" />
+                        <span className="ml-2 text-gray-600">Part-time</span>
+                      </label>
                     </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Field
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium text-gray-700 mb-2">Category</h3>
+                    <div className="space-y-2">
+                      <label className="flex items-center">
+                        <input type="checkbox" className="rounded border-gray-300 text-sattejli-blue focus:ring-sattejli-blue" />
+                        <span className="ml-2 text-gray-600">Technology</span>
                       </label>
-                      <div className="flex flex-wrap gap-2">
-                        {['Design', 'Development', 'Marketing', 'Data'].map(field => (
-                          <Button
-                            key={field}
-                            variant={filters.fields.includes(field) ? "default" : "outline"}
-                            size="sm"
-                            className={filters.fields.includes(field) 
-                              ? "bg-sattejli-blue text-white" 
-                              : "border-gray-300 text-gray-700"}
-                            onClick={() => handleFieldToggle(field)}
-                          >
-                            {field}
-                          </Button>
-                        ))}
-                      </div>
+                      <label className="flex items-center">
+                        <input type="checkbox" className="rounded border-gray-300 text-sattejli-blue focus:ring-sattejli-blue" />
+                        <span className="ml-2 text-gray-600">Marketing</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input type="checkbox" className="rounded border-gray-300 text-sattejli-blue focus:ring-sattejli-blue" />
+                        <span className="ml-2 text-gray-600">Design</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input type="checkbox" className="rounded border-gray-300 text-sattejli-blue focus:ring-sattejli-blue" />
+                        <span className="ml-2 text-gray-600">Finance</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input type="checkbox" className="rounded border-gray-300 text-sattejli-blue focus:ring-sattejli-blue" />
+                        <span className="ml-2 text-gray-600">Business</span>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6">
+                    <Button className="w-full bg-sattejli-blue hover:bg-blue-600">
+                      Apply Filters
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="lg:w-3/4">
+              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                <div className="flex flex-col sm:flex-row justify-between gap-4">
+                  <div className="relative sm:w-2/3">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input 
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search by keyword, title, or company"
+                      className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sattejli-blue focus:border-transparent"
+                    />
+                  </div>
+                  <div className="relative sm:w-1/3">
+                    <label className="text-sm font-medium text-gray-700 block mb-1">Sort by</label>
+                    <div className="relative">
+                      <select 
+                        className="w-full border border-gray-300 rounded-md pl-3 pr-10 py-2 appearance-none focus:outline-none focus:ring-2 focus:ring-sattejli-blue focus:border-transparent"
+                        value={sortOption}
+                        onChange={(e) => handleSort(e.target.value)}
+                      >
+                        <option value="newest">Newest</option>
+                        <option value="oldest">Oldest</option>
+                        <option value="company-az">Company (A-Z)</option>
+                        <option value="company-za">Company (Z-A)</option>
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
-        
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-6 flex justify-between items-center">
-            <h2 className="text-xl font-bold text-gray-900">
-              {processedInternships.length} Internships Found
-            </h2>
-            <div className="flex items-center">
-              <span className="text-sm text-gray-600 mr-2">Sort by:</span>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button className="text-sm text-gray-800 font-medium flex items-center">
-                    {sortBy === 'recent' ? 'Most Recent' : 'Oldest First'}
-                    <ChevronDown className="ml-1 h-4 w-4" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-48 p-0">
-                  <div className="py-1">
-                    <button 
-                      className={`w-full text-left px-4 py-2 text-sm ${sortBy === 'recent' ? 'bg-blue-50 text-sattejli-blue' : 'text-gray-700 hover:bg-gray-100'}`} 
-                      onClick={() => setSortBy('recent')}
-                    >
-                      Most Recent
-                    </button>
-                    <button 
-                      className={`w-full text-left px-4 py-2 text-sm ${sortBy === 'oldest' ? 'bg-blue-50 text-sattejli-blue' : 'text-gray-700 hover:bg-gray-100'}`} 
-                      onClick={() => setSortBy('oldest')}
-                    >
-                      Oldest First
-                    </button>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-          
-          <div className="space-y-6">
-            {processedInternships.length > 0 ? (
-              processedInternships.map((internship) => (
-                <div key={internship.id} className="relative">
-                  <Link to={`/internships/${internship.id}`}>
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow card-hover">
-                      <div className="flex">
-                        <div className="bg-gray-100 w-12 h-12 rounded flex items-center justify-center mr-4">
+              </div>
+              
+              <div className="space-y-4">
+                {internships.map((internship) => (
+                  <div key={internship.id} className="bg-white rounded-lg shadow-md p-6 hover:border-sattejli-blue hover:border transition-all">
+                    <Link to={`/internships/${internship.id}`}>
+                      <div className="flex items-start">
+                        <div className="bg-gray-100 rounded w-12 h-12 flex items-center justify-center mr-4">
                           <span className="font-bold text-gray-700">{internship.logo}</span>
                         </div>
                         <div className="flex-1">
-                          <div className="flex flex-col md:flex-row md:justify-between md:items-start">
+                          <div className="flex justify-between items-start">
                             <div>
-                              <h3 className="text-lg font-bold text-gray-900">{internship.title}</h3>
+                              <h3 className="font-bold text-lg text-gray-900 mb-1">{internship.title}</h3>
                               <p className="text-gray-600 mb-2">{internship.company}</p>
                             </div>
-                            <div className="flex items-center mb-2 md:mb-0">
-                              <span className="text-sm font-medium px-3 py-1 bg-blue-50 text-sattejli-blue rounded-full">
-                                {internship.type}
-                              </span>
-                            </div>
+                            <button 
+                              onClick={(e) => handleSaveInternship(e, internship.id)} 
+                              className="p-2 focus:outline-none"
+                            >
+                              <Bookmark 
+                                className="h-5 w-5 text-gray-400 hover:text-sattejli-blue" 
+                                fill={internship.saved ? "#4F46E5" : "none"}
+                                stroke={internship.saved ? "#4F46E5" : "currentColor"}
+                              />
+                            </button>
                           </div>
                           
-                          <div className="flex flex-wrap gap-2 my-3">
-                            {internship.tags.map((tag, index) => (
-                              <span key={index} className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                          
-                          <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center mt-3 text-sm">
-                            <div className="flex space-x-4">
-                              <span className="flex items-center text-gray-500">
-                                <MapPin className="h-4 w-4 mr-1" />
-                                {internship.location}
-                              </span>
-                              <span className="flex items-center text-gray-500">
-                                <Clock className="h-4 w-4 mr-1" />
-                                {internship.duration}
-                              </span>
+                          <div className="flex flex-wrap gap-y-2">
+                            <div className="flex items-center text-gray-500 text-sm mr-4">
+                              <MapPin className="h-4 w-4 mr-1" />
+                              {internship.location}
                             </div>
-                            <span className="text-gray-400 mt-2 sm:mt-0">Posted {internship.postedDate}</span>
+                            <div className="flex items-center text-gray-500 text-sm mr-4">
+                              <Briefcase className="h-4 w-4 mr-1" />
+                              {internship.type}
+                            </div>
+                            <div className="flex items-center text-gray-500 text-sm mr-4">
+                              <Clock className="h-4 w-4 mr-1" />
+                              {internship.duration}
+                            </div>
+                            <div className="flex items-center text-gray-500 text-sm">
+                              <Calendar className="h-4 w-4 mr-1" />
+                              Posted: {formatDate(internship.postedDate)}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </Link>
-                  <button 
-                    className="absolute top-4 right-4 p-2 rounded-full bg-white shadow-sm hover:bg-gray-50 z-10"
-                    onClick={(e) => handleSaveInternship(e, internship.id)}
-                    title={savedInternships.includes(internship.id) ? "Remove from saved" : "Save internship"}
-                  >
-                    <Bookmark 
-                      className="h-5 w-5" 
-                      fill={savedInternships.includes(internship.id) ? "#4F46E5" : "none"}
-                      stroke={savedInternships.includes(internship.id) ? "#4F46E5" : "currentColor"}
-                    />
-                  </button>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8 bg-white rounded-lg shadow-sm">
-                <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                  <X className="h-8 w-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No internships found</h3>
-                <p className="text-gray-600 mb-4">Try adjusting your search or filter criteria</p>
-                <Button 
-                  variant="outline" 
-                  className="border-sattejli-blue text-sattejli-blue"
-                  onClick={() => {
-                    setSearchTerm('');
-                    setLocation('');
-                    resetFilters();
-                  }}
-                >
-                  Clear All Filters
-                </Button>
+                    </Link>
+                  </div>
+                ))}
               </div>
-            )}
+              
+              <div className="mt-8 flex justify-center">
+                <nav className="flex items-center">
+                  <button className="px-3 py-1 border border-gray-300 rounded-l-md text-gray-500 hover:bg-gray-50">
+                    Previous
+                  </button>
+                  <button className="px-3 py-1 border-t border-b border-gray-300 bg-sattejli-blue text-white">
+                    1
+                  </button>
+                  <button className="px-3 py-1 border-t border-b border-gray-300 text-gray-500 hover:bg-gray-50">
+                    2
+                  </button>
+                  <button className="px-3 py-1 border-t border-b border-gray-300 text-gray-500 hover:bg-gray-50">
+                    3
+                  </button>
+                  <button className="px-3 py-1 border border-gray-300 rounded-r-md text-gray-500 hover:bg-gray-50">
+                    Next
+                  </button>
+                </nav>
+              </div>
+            </div>
           </div>
         </div>
       </main>

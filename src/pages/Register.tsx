@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, GraduationCap, Building2, Check } from 'lucide-react';
+import { ArrowLeft, GraduationCap, Building2, Check, Github, Mail, Linkedin } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
@@ -68,6 +68,27 @@ const Register = () => {
       setIsLoading(false);
     }
   };
+  
+  const handleSocialSignup = (provider: string) => {
+    setIsLoading(true);
+    
+    // This would be replaced with actual social auth implementation
+    setTimeout(() => {
+      toast({
+        title: `Signup with ${provider} successful`,
+        description: "Your account has been created. Welcome to Sattejli!",
+      });
+      
+      // Redirect to onboarding based on user type
+      if (userType === 'student') {
+        navigate('/student-onboarding');
+      } else {
+        navigate('/company-onboarding');
+      }
+      
+      setIsLoading(false);
+    }, 1500);
+  };
 
   return (
     <>
@@ -100,6 +121,39 @@ const Register = () => {
               </p>
             </TabsContent>
           </Tabs>
+          
+          <div className="mb-6 grid grid-cols-3 gap-3">
+            <button
+              type="button"
+              onClick={() => handleSocialSignup('Google')}
+              className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+            >
+              <Mail className="h-5 w-5 text-red-500" />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSocialSignup('GitHub')}
+              className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+            >
+              <Github className="h-5 w-5 text-gray-900" />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSocialSignup('LinkedIn')}
+              className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+            >
+              <Linkedin className="h-5 w-5 text-blue-700" />
+            </button>
+          </div>
+          
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or sign up with email</span>
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
