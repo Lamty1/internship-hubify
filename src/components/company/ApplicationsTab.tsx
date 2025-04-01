@@ -1,140 +1,189 @@
-
-import { ApplicationData } from '@/types/company';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useEffect, useState } from "react";
+import { ApplicationData } from "@/types/company";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/ui/use-toast";
 
 interface ApplicationsTabProps {
-  viewApplicantProfile: (id: number) => void;
-  handleContactApplicant: (name: string) => void;
+  applications: any[];
 }
 
-const ApplicationsTab = ({ 
-  viewApplicantProfile, 
-  handleContactApplicant 
-}: ApplicationsTabProps) => {
-  // Mock data for demonstration
-  const applications: ApplicationData[] = [
-    {
-      id: 1,
-      name: 'Ahmed Ben Ali',
-      position: 'Frontend Developer Intern',
-      status: 'Reviewed',
-      date: '2023-05-18',
-    },
-    {
-      id: 2,
-      name: 'Fatima Mansour',
-      position: 'UI/UX Design Intern',
-      status: 'New',
-      date: '2023-05-21',
-    },
-    {
-      id: 3,
-      name: 'Youssef Khelil',
-      position: 'Frontend Developer Intern',
-      status: 'Interview',
-      date: '2023-05-16',
-    },
-    {
-      id: 4,
-      name: 'Nour Sassi',
-      position: 'Backend Developer Intern',
-      status: 'Rejected',
-      date: '2023-05-19',
-    },
-  ];
+const ApplicationsTab: React.FC<ApplicationsTabProps> = ({ applications }) => {
+  const [open, setOpen] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState<any | null>(null);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'New':
-        return 'bg-blue-100 text-blue-800';
-      case 'Reviewed':
-        return 'bg-purple-100 text-purple-800';
-      case 'Interview':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Rejected':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const handleOpen = (application: any) => {
+    setSelectedApplication(application);
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setSelectedApplication(null);
+    setOpen(false);
+  };
+
+  const applicationStatusColors: { [key: string]: string } = {
+    pending: "bg-gray-100 text-gray-800",
+    reviewed: "bg-blue-100 text-blue-800",
+    interviewed: "bg-yellow-100 text-yellow-800",
+    accepted: "bg-green-100 text-green-800",
+    rejected: "bg-red-100 text-red-800",
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Applications</h1>
-      
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-gray-900">Recent Applications</h2>
-          <div className="flex space-x-2">
-            <select className="border border-gray-300 rounded-md text-sm p-2">
-              <option>All Positions</option>
-              <option>Frontend Developer Intern</option>
-              <option>UI/UX Design Intern</option>
-              <option>Backend Developer Intern</option>
-            </select>
-            <select className="border border-gray-300 rounded-md text-sm p-2">
-              <option>All Statuses</option>
-              <option>New</option>
-              <option>Reviewed</option>
-              <option>Interview</option>
-              <option>Rejected</option>
-            </select>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applicant</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {applications.map((application) => (
-                <tr key={application.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div 
-                      className="text-sm font-medium text-gray-900 cursor-pointer hover:text-sattejli-blue"
-                      onClick={() => viewApplicantProfile(application.id)}
-                    >
-                      {application.name}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{application.position}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(application.status)}`}>
-                      {application.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{application.date}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button 
-                      className="text-sattejli-blue hover:text-blue-700 mr-3"
-                      onClick={() => viewApplicantProfile(application.id)}
-                    >
-                      View
-                    </button>
-                    <button 
-                      className="text-green-600 hover:text-green-900 mr-3"
-                      onClick={() => handleContactApplicant(application.name)}
-                    >
-                      Contact
-                    </button>
-                    <button className="text-red-600 hover:text-red-900">
-                      Reject
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Position</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {applications.map((application) => (
+            <TableRow key={application.id}>
+              <TableCell className="font-medium">
+                {application.student.firstName} {application.student.lastName}
+              </TableCell>
+              <TableCell className="font-medium">{application.internship.title}</TableCell>
+              <TableCell>
+                <Badge className={applicationStatusColors[application.status]}>
+                  {application.status}
+                </Badge>
+              </TableCell>
+              <TableCell>{formatDate(application.submittedAt)}</TableCell>
+              <TableCell className="text-right">
+                <Button variant="outline" size="sm" onClick={() => handleOpen(application)}>
+                  View
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Application Details</DialogTitle>
+            <DialogDescription>
+              View all the details regarding this application.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedApplication && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                  Name
+                </Label>
+                <Input
+                  type="text"
+                  id="name"
+                  value={`${selectedApplication.student.firstName} ${selectedApplication.student.lastName}`}
+                  className="col-span-3"
+                  disabled
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="position" className="text-right">
+                  Position
+                </Label>
+                <Input
+                  type="text"
+                  id="position"
+                  value={selectedApplication.internship.title}
+                  className="col-span-3"
+                  disabled
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="status" className="text-right">
+                  Status
+                </Label>
+                <Input
+                  type="text"
+                  id="status"
+                  value={selectedApplication.status}
+                  className="col-span-3"
+                  disabled
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="date" className="text-right">
+                  Date
+                </Label>
+                <Input
+                  type="text"
+                  id="date"
+                  value={formatDate(selectedApplication.submittedAt)}
+                  className="col-span-3"
+                  disabled
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="coverLetter" className="text-right">
+                  Cover Letter
+                </Label>
+                <Textarea
+                  id="coverLetter"
+                  value={selectedApplication.coverLetter || "N/A"}
+                  className="col-span-3"
+                  disabled
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="resume" className="text-right">
+                  Resume
+                </Label>
+                <a href={selectedApplication.resumeUrl} target="_blank" rel="noopener noreferrer">
+                  View Resume
+                </a>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="secondary">
+                Close
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
