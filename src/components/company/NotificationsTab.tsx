@@ -2,7 +2,11 @@
 import { FileText as FileIcon, CheckCircle, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const NotificationsTab = () => {
+interface NotificationsTabProps {
+  userId: string;
+}
+
+const NotificationsTab = ({ userId }: NotificationsTabProps) => {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
