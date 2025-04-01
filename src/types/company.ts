@@ -1,5 +1,6 @@
 
 export interface CompanyInfo {
+  id?: string;
   name: string;
   logo: string;
   industry: string;
@@ -11,7 +12,7 @@ export interface CompanyInfo {
 }
 
 export interface InternshipData {
-  id: number;
+  id: number | string;
   title: string;
   applications: number;
   status: string;
@@ -20,9 +21,24 @@ export interface InternshipData {
 }
 
 export interface ApplicationData {
-  id: number;
+  id: number | string;
   name: string;
   position: string;
   status: string;
   date: string;
+}
+
+export interface InternshipFormData {
+  title: string;
+  location: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+  salary: string;
+  description: string;
+  responsibilities: string[];
+  requirements: string[];
+  skills: string[];
+  applicationDeadline: string;
+  positions: number;
 }

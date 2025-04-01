@@ -1,15 +1,21 @@
-
 import React, { useState } from 'react';
 import { ArrowLeft, Briefcase, MapPin, Calendar, Clock, DollarSign, FileText, Users } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { createInternship } from '@/lib/api';
+import { InternshipFormData } from '@/types/company';
+
+const COMPANY_ID = '123';
 
 const PostInternship = () => {
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [formData, setFormData] = useState<InternshipFormData>({
     title: '',
     location: '',
     type: '',
@@ -44,17 +50,29 @@ const PostInternship = () => {
     setFormData({ ...formData, [field]: updatedList });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate form submission
-    toast({
-      title: "Internship posted",
-      description: "Your internship has been successfully posted.",
-    });
-    // Redirect to dashboard after 2 seconds
-    setTimeout(() => {
-      window.location.href = '/company-dashboard';
-    }, 2000);
+    setIsSubmitting(true);
+    
+    try {
+      await createInternship(COMPANY_ID, formData);
+      
+      toast({
+        title: "Internship posted",
+        description: "Your internship has been successfully posted.",
+      });
+      
+      navigate('/company-dashboard');
+    } catch (error) {
+      console.error("Error posting internship:", error);
+      toast({
+        title: "Error",
+        description: "There was an error posting your internship. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

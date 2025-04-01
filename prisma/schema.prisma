@@ -1,0 +1,106 @@
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  role          String    // "student" or "company"
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  student       Student?
+  company       Company?
+}
+
+model Student {
+  id            String        @id @default(uuid())
+  userId        String        @unique
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName     String
+  lastName      String
+  profileImage  String?
+  university    String?
+  major         String?
+  graduationYear Int?
+  bio           String?
+  resume        String?       // URL to resume file
+  skills        String[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  applications  Application[]
+}
+
+model Company {
+  id            String        @id @default(uuid())
+  userId        String        @unique
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  logo          String?
+  industry      String?
+  location      String?
+  website       String?
+  email         String?
+  phone         String?
+  description   String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  internships   Internship[]
+}
+
+model Internship {
+  id                 String        @id @default(uuid())
+  companyId          String
+  company            Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  title              String
+  location           String
+  type               String        // "Full-time", "Part-time", "Flexible"
+  startDate          DateTime
+  endDate            DateTime
+  salary             String?
+  description        String
+  responsibilities   String[]
+  requirements       String[]
+  skills             String[]
+  applicationDeadline DateTime
+  positions          Int
+  status             String        @default("active") // "active", "closed", "draft"
+  posted             DateTime      @default(now())
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  applications       Application[]
+}
+
+model Application {
+  id             String      @id @default(uuid())
+  internshipId   String
+  internship     Internship  @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  studentId      String
+  student        Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status         String      @default("pending") // "pending", "reviewed", "interviewed", "accepted", "rejected"
+  coverLetter    String?
+  resumeUrl      String?
+  submittedAt    DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  notifications  Notification[]
+}
+
+model Notification {
+  id             String      @id @default(uuid())
+  applicationId  String?
+  application    Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  userId         String      // Can be either student or company
+  title          String
+  message        String
+  isRead         Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+}
