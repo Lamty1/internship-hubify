@@ -9,8 +9,15 @@ interface CustomNodeJsGlobal {
 // Prevent multiple instances of Prisma Client in development
 declare const global: CustomNodeJsGlobal & typeof globalThis;
 
-const prisma = global.prisma || new PrismaClient();
+// Check if we're in a Node.js environment where global is defined
+const prismaGlobal = typeof global !== 'undefined' ? global : {};
 
-if (process.env.NODE_ENV === 'development') global.prisma = prisma;
+// Check for existing instance or create a new PrismaClient
+const prisma = (prismaGlobal as any).prisma || new PrismaClient();
+
+// Save the instance in development mode if we're in Node.js
+if (process.env.NODE_ENV === 'development' && typeof global !== 'undefined') {
+  (prismaGlobal as any).prisma = prisma;
+}
 
 export default prisma;

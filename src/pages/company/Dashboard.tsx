@@ -26,24 +26,44 @@ const CompanyDashboard = () => {
     description: 'TechCorp Solutions is a leading IT company specializing in software development, cloud solutions, and digital transformation services.',
   };
   
+  // Mock applications data
+  const mockApplications = [
+    {
+      id: '1',
+      student: {
+        firstName: 'John',
+        lastName: 'Doe'
+      },
+      internship: {
+        title: 'Frontend Developer'
+      },
+      status: 'pending',
+      submittedAt: new Date().toISOString(),
+      coverLetter: 'I am very interested in this position...',
+      resumeUrl: '#'
+    },
+    {
+      id: '2',
+      student: {
+        firstName: 'Jane',
+        lastName: 'Smith'
+      },
+      internship: {
+        title: 'Backend Developer'
+      },
+      status: 'reviewed',
+      submittedAt: new Date().toISOString(),
+      coverLetter: 'I have 2 years of experience in...',
+      resumeUrl: '#'
+    }
+  ];
+  
   const handleEditProfile = () => {
     navigate('/company-profile');
   };
   
   const handlePostInternship = () => {
     navigate('/post-internship');
-  };
-  
-  const viewApplicantProfile = (id: number) => {
-    navigate(`/applicant-profile/${id}`);
-  };
-  
-  const handleContactApplicant = (name: string) => {
-    toast({
-      title: "Contact initiated",
-      description: `Opening email to contact ${name}...`,
-    });
-    // In a real app, this would open an email compose window or an in-app messaging system
   };
 
   return (
@@ -60,10 +80,7 @@ const CompanyDashboard = () => {
         )}
 
         {activeTab === 'applications' && (
-          <ApplicationsTab 
-            viewApplicantProfile={viewApplicantProfile}
-            handleContactApplicant={handleContactApplicant}
-          />
+          <ApplicationsTab applications={mockApplications} />
         )}
 
         {activeTab === 'profile' && (
