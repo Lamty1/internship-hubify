@@ -17,8 +17,25 @@ import PostInternship from '@/pages/PostInternship';
 import ApplicantProfile from '@/pages/ApplicantProfile';
 import NotFound from '@/pages/NotFound';
 
-// Create a client
-const queryClient = new QueryClient();
+// Create a client with defaultOptions to handle errors gracefully
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      // Handle errors at the query level to prevent crashes
+      onError: (error) => {
+        console.error('Query error:', error);
+      }
+    },
+    mutations: {
+      // Handle errors at the mutation level to prevent crashes
+      onError: (error) => {
+        console.error('Mutation error:', error);
+      }
+    }
+  }
+});
 
 function App() {
   return (

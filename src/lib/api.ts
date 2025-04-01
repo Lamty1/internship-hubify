@@ -1,5 +1,19 @@
 
-import prisma from './prisma';
+// Conditionally import the appropriate Prisma client
+let prisma;
+try {
+  if (typeof window === 'undefined') {
+    // Server environment
+    prisma = require('./prisma').default;
+  } else {
+    // Browser environment
+    prisma = require('./prisma-browser').default;
+  }
+} catch (error) {
+  // Fallback to browser mock if import fails
+  prisma = require('./prisma-browser').default;
+}
+
 import { InternshipFormData } from '@/types/company';
 
 // User related functions
