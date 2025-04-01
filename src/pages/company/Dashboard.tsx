@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import CompanySidebar from '@/components/company/Sidebar';
@@ -8,62 +8,61 @@ import ApplicationsTab from '@/components/company/ApplicationsTab';
 import ProfileTab from '@/components/company/ProfileTab';
 import NotificationsTab from '@/components/company/NotificationsTab';
 import SettingsTab from '@/components/company/SettingsTab';
+import { getCompanyByUserId, getApplicationsByCompany } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
+
+// For demo purposes, we'll use a fixed user ID
+// In a real application, this would come from authentication
+const DEMO_USER_ID = '1';
 
 const CompanyDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Mock data for demonstration
-  const companyInfo = {
-    name: 'TechCorp Solutions',
-    logo: 'https://via.placeholder.com/100',
-    industry: 'Information Technology',
-    location: 'Tunis, Tunisia',
-    website: 'www.techcorp.tn',
-    email: 'contact@techcorp.tn',
-    phone: '+216 71 123 456',
-    description: 'TechCorp Solutions is a leading IT company specializing in software development, cloud solutions, and digital transformation services.',
-  };
-  
-  // Mock applications data
-  const mockApplications = [
-    {
-      id: '1',
-      student: {
-        firstName: 'John',
-        lastName: 'Doe'
-      },
-      internship: {
-        title: 'Frontend Developer'
-      },
-      status: 'pending',
-      submittedAt: new Date().toISOString(),
-      coverLetter: 'I am very interested in this position...',
-      resumeUrl: '#'
-    },
-    {
-      id: '2',
-      student: {
-        firstName: 'Jane',
-        lastName: 'Smith'
-      },
-      internship: {
-        title: 'Backend Developer'
-      },
-      status: 'reviewed',
-      submittedAt: new Date().toISOString(),
-      coverLetter: 'I have 2 years of experience in...',
-      resumeUrl: '#'
-    }
-  ];
-  
+  // Fetch company data
+  const { data: companyData, isLoading: isLoadingCompany, error: companyError } = useQuery({
+    queryKey: ['company', DEMO_USER_ID],
+    queryFn: () => getCompanyByUserId(DEMO_USER_ID),
+  });
+
+  // Fetch applications
+  const { data: applications, isLoading: isLoadingApplications } = useQuery({
+    queryKey: ['applications', companyData?.id],
+    queryFn: () => companyData?.id ? getApplicationsByCompany(companyData.id) : Promise.resolve([]),
+    enabled: !!companyData?.id,
+  });
+
   const handleEditProfile = () => {
     navigate('/company-profile');
   };
   
   const handlePostInternship = () => {
     navigate('/post-internship');
+  };
+
+  if (isLoadingCompany) {
+    return <div className="flex min-h-screen items-center justify-center">Loading company data...</div>;
+  }
+
+  if (companyError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center">
+        <h1 className="text-2xl font-bold text-red-600">Error loading company data</h1>
+        <p className="text-gray-600">Please try again later</p>
+      </div>
+    );
+  }
+
+  const companyInfo = companyData || {
+    name: 'Company Name',
+    logo: 'https://via.placeholder.com/100',
+    industry: 'Industry',
+    location: 'Location',
+    website: 'website.com',
+    email: 'email@example.com',
+    phone: '+123456789',
+    description: 'Company description',
   };
 
   return (
@@ -75,12 +74,17 @@ const CompanyDashboard = () => {
       <div className="flex-1 p-8">
         {activeTab === 'dashboard' && (
           <DashboardTab 
-            handlePostInternship={handlePostInternship} 
+            handlePostInternship={handlePostInternship}
+            companyId={companyData?.id}
+            internships={companyData?.internships || []}
           />
         )}
 
         {activeTab === 'applications' && (
-          <ApplicationsTab applications={mockApplications} />
+          <ApplicationsTab 
+            applications={applications || []}
+            isLoading={isLoadingApplications}
+          />
         )}
 
         {activeTab === 'profile' && (
@@ -91,7 +95,7 @@ const CompanyDashboard = () => {
         )}
 
         {activeTab === 'notifications' && (
-          <NotificationsTab />
+          <NotificationsTab userId={DEMO_USER_ID} />
         )}
 
         {activeTab === 'settings' && (

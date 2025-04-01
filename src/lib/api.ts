@@ -23,6 +23,16 @@ export async function getUserByEmail(email: string) {
   });
 }
 
+export async function getUserById(id: string) {
+  return prisma.user.findUnique({
+    where: { id },
+    include: {
+      student: true,
+      company: true,
+    },
+  });
+}
+
 // Company related functions
 export async function createCompany(userId: string, companyData: { name: string, [key: string]: any }) {
   return prisma.company.create({
@@ -43,6 +53,24 @@ export async function updateCompany(id: string, data: any) {
 export async function getCompanyByUserId(userId: string) {
   return prisma.company.findUnique({
     where: { userId },
+    include: {
+      internships: {
+        include: {
+          _count: {
+            select: { applications: true },
+          },
+        },
+      },
+    },
+  });
+}
+
+export async function getCompanyById(id: string) {
+  return prisma.company.findUnique({
+    where: { id },
+    include: {
+      internships: true,
+    },
   });
 }
 
@@ -167,6 +195,32 @@ export async function getApplicationsByStudent(studentId: string) {
               logo: true,
             },
           },
+        },
+      },
+    },
+    orderBy: { submittedAt: 'desc' },
+  });
+}
+
+export async function getApplicationsByCompany(companyId: string) {
+  return prisma.application.findMany({
+    where: { 
+      internship: {
+        companyId
+      } 
+    },
+    include: {
+      student: {
+        select: {
+          firstName: true,
+          lastName: true,
+          university: true,
+          profileImage: true,
+        },
+      },
+      internship: {
+        select: {
+          title: true,
         },
       },
     },

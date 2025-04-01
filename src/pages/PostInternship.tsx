@@ -1,19 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Briefcase, MapPin, Calendar, Clock, DollarSign, FileText, Users } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { createInternship } from '@/lib/api';
+import { createInternship, getCompanyByUserId } from '@/lib/api';
 import { InternshipFormData } from '@/types/company';
+import { useQuery } from '@tanstack/react-query';
 
-const COMPANY_ID = '123';
+const DEMO_USER_ID = '1';
 
 const PostInternship = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [companyId, setCompanyId] = useState<string | null>(null);
+  
+  const { data: companyData } = useQuery({
+    queryKey: ['company', DEMO_USER_ID],
+    queryFn: () => getCompanyByUserId(DEMO_USER_ID),
+  });
+
+  useEffect(() => {
+    if (companyData) {
+      setCompanyId(companyData.id);
+    }
+  }, [companyData]);
   
   const [formData, setFormData] = useState<InternshipFormData>({
     title: '',
@@ -52,10 +65,20 @@ const PostInternship = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!companyId) {
+      toast({
+        title: "Error",
+        description: "Company ID not found. Please try again later.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
-      await createInternship(COMPANY_ID, formData);
+      await createInternship(companyId, formData);
       
       toast({
         title: "Internship posted",
@@ -386,8 +409,12 @@ const PostInternship = () => {
                     Cancel
                   </Button>
                 </Link>
-                <Button type="submit" className="bg-sattejli-blue hover:bg-blue-600">
-                  Post Internship
+                <Button 
+                  type="submit" 
+                  className="bg-sattejli-blue hover:bg-blue-600"
+                  disabled={isSubmitting || !companyId}
+                >
+                  {isSubmitting ? 'Posting...' : 'Post Internship'}
                 </Button>
               </div>
             </form>
