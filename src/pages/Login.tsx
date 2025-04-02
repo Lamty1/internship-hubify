@@ -1,41 +1,78 @@
 
-import { useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, GraduationCap, Building2, Github, Mail, Linkedin } from 'lucide-react';
+import { ArrowLeft, GraduationCap, Building2 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
-import { useAuthManager } from '@/lib/auth-utils';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { getUserByEmail } from '@/lib/api';
+
+// Form validation schema
+const loginSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  password: z.string().min(1, { message: "Password is required" }),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { handleLogin, isAuthenticated, isLoading, syncUserWithDatabase } = useAuthManager();
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<'student' | 'company'>('student');
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated && !isLoading) {
-      // Sync with database to get user role
-      syncUserWithDatabase().then((dbUser) => {
-        toast({
-          title: "Login successful",
-          description: "Welcome back to Sattejli!",
-        });
-        
-        // Navigate to appropriate dashboard based on user role
-        if (dbUser?.role === 'company') {
-          navigate('/company-dashboard');
-        } else {
-          navigate('/student-dashboard');
-        }
-      });
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: ''
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  });
 
-  const handleSocialLogin = () => {
-    handleLogin();
+  const handleLogin = async (values: LoginFormValues) => {
+    setIsLoading(true);
+    try {
+      // Check if user exists in our database
+      const user = await getUserByEmail(values.email);
+      
+      if (!user || user.password !== values.password) {
+        toast({
+          title: "Login failed",
+          description: "Invalid email or password. Please try again.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome back to Sattejli!",
+      });
+      
+      // Navigate to appropriate dashboard based on user role
+      if (user.role === 'company') {
+        navigate('/company-dashboard');
+      } else {
+        navigate('/student-dashboard');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: "Login failed",
+        description: "There was a problem logging in. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -49,7 +86,11 @@ const Login = () => {
 
           <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">Log in to Sattejli</h1>
           
-          <Tabs defaultValue="student" className="mb-6">
+          <Tabs 
+            defaultValue="student" 
+            className="mb-6"
+            onValueChange={(value) => setSelectedRole(value as 'student' | 'company')}
+          >
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="student" className="flex items-center justify-center">
                 <GraduationCap className="mr-2 h-4 w-4" /> Student
@@ -69,45 +110,50 @@ const Login = () => {
               </p>
             </TabsContent>
           </Tabs>
-
-          <Button onClick={handleLogin} className="w-full bg-sattejli-blue hover:bg-blue-600 mb-4" disabled={isLoading}>
-            {isLoading ? 'Logging in...' : 'Continue with Email'}
-          </Button>
           
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or continue with</span>
-              </div>
-            </div>
-          
-            <div className="mt-6 grid grid-cols-3 gap-3">
-              <button
-                type="button"
-                onClick={handleSocialLogin}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-              >
-                <Mail className="h-5 w-5 text-red-500" />
-              </button>
-              <button
-                type="button"
-                onClick={handleSocialLogin}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-              >
-                <Github className="h-5 w-5 text-gray-900" />
-              </button>
-              <button
-                type="button"
-                onClick={handleSocialLogin}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-              >
-                <Linkedin className="h-5 w-5 text-blue-700" />
-              </button>
-            </div>
-          </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleLogin)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter your email" 
+                        type="email"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter your password" 
+                        type="password"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <Button type="submit" className="w-full bg-sattejli-blue hover:bg-blue-600" disabled={isLoading}>
+                {isLoading ? 'Logging in...' : 'Log in'}
+              </Button>
+            </form>
+          </Form>
           
           <p className="text-sm text-gray-600 text-center mt-6">
             Don't have an account?{' '}
