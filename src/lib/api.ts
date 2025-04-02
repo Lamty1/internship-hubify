@@ -1,10 +1,6 @@
 // We need to handle this differently in browser environments
 // Instead of using require, we'll import directly
-import { prisma as prismaBrowser } from './prisma-browser';
-
-// Create a variable to hold the appropriate Prisma client
-const prisma = prismaBrowser;
-
+import { prisma } from './prisma-browser';
 import { InternshipFormData } from '@/types/company';
 
 // User related functions
