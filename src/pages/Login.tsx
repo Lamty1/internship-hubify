@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,70 +7,35 @@ import { ArrowLeft, GraduationCap, Building2, Github, Mail, Linkedin } from 'luc
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthManager } from '@/lib/auth-utils';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [userType, setUserType] = useState('student');
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { handleLogin, isAuthenticated, isLoading, syncUserWithDatabase } = useAuthManager();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    // This would be replaced with actual auth implementation
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Simulate successful login
-      if (email && password) {
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      // Sync with database to get user role
+      syncUserWithDatabase().then((dbUser) => {
         toast({
           title: "Login successful",
           description: "Welcome back to Sattejli!",
         });
         
-        // Navigate to appropriate dashboard
-        if (userType === 'student') {
-          navigate('/student-dashboard');
-        } else {
+        // Navigate to appropriate dashboard based on user role
+        if (dbUser?.role === 'company') {
           navigate('/company-dashboard');
+        } else {
+          navigate('/student-dashboard');
         }
-      } else {
-        throw new Error("Please fill out all fields");
-      }
-    } catch (error) {
-      toast({
-        title: "Login failed",
-        description: error instanceof Error ? error.message : "Please check your credentials and try again",
-        variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [isAuthenticated, isLoading, navigate]);
 
-  const handleSocialLogin = (provider: string) => {
-    setIsLoading(true);
-    
-    // This would be replaced with actual social auth implementation
-    setTimeout(() => {
-      toast({
-        title: `Login with ${provider} successful`,
-        description: "Welcome to Sattejli!",
-      });
-      
-      // Navigate to appropriate dashboard
-      if (userType === 'student') {
-        navigate('/student-dashboard');
-      } else {
-        navigate('/company-dashboard');
-      }
-      
-      setIsLoading(false);
-    }, 1500);
+  const handleSocialLogin = () => {
+    handleLogin();
   };
 
   return (
@@ -84,7 +49,7 @@ const Login = () => {
 
           <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">Log in to Sattejli</h1>
           
-          <Tabs defaultValue="student" className="mb-6" onValueChange={setUserType}>
+          <Tabs defaultValue="student" className="mb-6">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="student" className="flex items-center justify-center">
                 <GraduationCap className="mr-2 h-4 w-4" /> Student
@@ -105,46 +70,9 @@ const Login = () => {
             </TabsContent>
           </Tabs>
 
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input-field w-full"
-                placeholder="your@email.com"
-                required
-              />
-            </div>
-            
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-1">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Password
-                </label>
-                <Link to="/forgot-password" className="text-xs text-sattejli-blue hover:text-blue-700">
-                  Forgot password?
-                </Link>
-              </div>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input-field w-full"
-                placeholder="••••••••"
-                required
-              />
-            </div>
-            
-            <Button type="submit" className="w-full bg-sattejli-blue hover:bg-blue-600" disabled={isLoading}>
-              {isLoading ? 'Logging in...' : 'Log In'}
-            </Button>
-          </form>
+          <Button onClick={handleLogin} className="w-full bg-sattejli-blue hover:bg-blue-600 mb-4" disabled={isLoading}>
+            {isLoading ? 'Logging in...' : 'Continue with Email'}
+          </Button>
           
           <div className="mt-6">
             <div className="relative">
@@ -159,21 +87,21 @@ const Login = () => {
             <div className="mt-6 grid grid-cols-3 gap-3">
               <button
                 type="button"
-                onClick={() => handleSocialLogin('Google')}
+                onClick={handleSocialLogin}
                 className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
               >
                 <Mail className="h-5 w-5 text-red-500" />
               </button>
               <button
                 type="button"
-                onClick={() => handleSocialLogin('GitHub')}
+                onClick={handleSocialLogin}
                 className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
               >
                 <Github className="h-5 w-5 text-gray-900" />
               </button>
               <button
                 type="button"
-                onClick={() => handleSocialLogin('LinkedIn')}
+                onClick={handleSocialLogin}
                 className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
               >
                 <Linkedin className="h-5 w-5 text-blue-700" />
