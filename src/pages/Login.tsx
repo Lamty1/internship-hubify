@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, GraduationCap, Building2 } from 'lucide-react';
+import { ArrowLeft, GraduationCap, Building2, Github, Linkedin, Mail } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
@@ -13,6 +13,8 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getUserByEmail } from '@/lib/api';
+import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 
 // Form validation schema
 const loginSchema = z.object({
@@ -75,6 +77,15 @@ const Login = () => {
     }
   };
 
+  const handleSocialLogin = (provider: string) => {
+    setIsLoading(true);
+    toast({
+      title: `${provider} login`,
+      description: `${provider} authentication is not yet implemented.`,
+    });
+    setIsLoading(false);
+  };
+
   return (
     <>
       <Navbar />
@@ -111,6 +122,49 @@ const Login = () => {
             </TabsContent>
           </Tabs>
           
+          {/* Social Login Options */}
+          <div className="mb-6">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex flex-col space-y-3">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start" 
+                    onClick={() => handleSocialLogin('GitHub')}
+                  >
+                    <Github className="mr-2 h-4 w-4" />
+                    <span>Continue with GitHub</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start" 
+                    onClick={() => handleSocialLogin('LinkedIn')}
+                  >
+                    <Linkedin className="mr-2 h-4 w-4" />
+                    <span>Continue with LinkedIn</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start" 
+                    onClick={() => handleSocialLogin('Gmail')}
+                  >
+                    <Mail className="mr-2 h-4 w-4" />
+                    <span>Continue with Gmail</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <Separator className="w-full" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-white px-2 text-sm text-gray-500">Or continue with email</span>
+            </div>
+          </div>
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleLogin)} className="space-y-4">
               <FormField
