@@ -5,38 +5,38 @@
 // Create a mock PrismaClient with all the necessary methods
 export const prisma = {
   user: {
-    findUnique: async () => null,
-    findMany: async () => [],
+    findUnique: async (params: any = {}) => null,
+    findMany: async (params: any = {}) => [],
     create: async (data: any) => data.data,
     update: async (data: any) => data.data,
-    updateMany: async () => ({ count: 0 }),
-    delete: async () => ({}),
-    deleteMany: async () => ({ count: 0 }),
+    updateMany: async (params: any = {}) => ({ count: 0 }),
+    delete: async (params: any = {}) => ({}),
+    deleteMany: async (params: any = {}) => ({ count: 0 }),
   },
   student: {
-    findUnique: async () => null,
-    findMany: async () => [],
+    findUnique: async (params: any = {}) => null,
+    findMany: async (params: any = {}) => [],
     create: async (data: any) => data.data,
     update: async (data: any) => data.data,
-    delete: async () => ({}),
+    delete: async (params: any = {}) => ({}),
   },
   company: {
-    findUnique: async () => null,
-    findMany: async () => [],
+    findUnique: async (params: any = {}) => null,
+    findMany: async (params: any = {}) => [],
     create: async (data: any) => data.data,
     update: async (data: any) => data.data,
-    delete: async () => ({}),
+    delete: async (params: any = {}) => ({}),
   },
   internship: {
-    findUnique: async () => null,
-    findMany: async () => [],
+    findUnique: async (params: any = {}) => null,
+    findMany: async (params: any = {}) => [],
     create: async (data: any) => data.data,
     update: async (data: any) => data.data,
-    delete: async () => ({}),
+    delete: async (params: any = {}) => ({}),
   },
   application: {
-    findUnique: async () => null,
-    findMany: async () => [],
+    findUnique: async (params: any = {}) => null,
+    findMany: async (params: any = {}) => [],
     create: async (data: any) => ({
       id: 'mock-application-id',
       ...data.data,
@@ -63,15 +63,15 @@ export const prisma = {
         title: 'Mock Internship'
       }
     }),
-    delete: async () => ({}),
+    delete: async (params: any = {}) => ({}),
   },
   notification: {
-    findUnique: async () => null,
-    findMany: async () => [],
+    findUnique: async (params: any = {}) => null,
+    findMany: async (params: any = {}) => [],
     create: async (data: any) => data.data,
     update: async (data: any) => data.data,
-    updateMany: async () => ({ count: 0 }),
-    delete: async () => ({}),
+    updateMany: async (params: any = {}) => ({ count: 0 }),
+    delete: async (params: any = {}) => ({}),
   },
 };
 
