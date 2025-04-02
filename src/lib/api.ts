@@ -1,18 +1,9 @@
+// We need to handle this differently in browser environments
+// Instead of using require, we'll import directly
+import { prisma as prismaBrowser } from './prisma-browser';
 
-// Conditionally import the appropriate Prisma client
-let prisma;
-try {
-  if (typeof window === 'undefined') {
-    // Server environment
-    prisma = require('./prisma').default;
-  } else {
-    // Browser environment
-    prisma = require('./prisma-browser').default;
-  }
-} catch (error) {
-  // Fallback to browser mock if import fails
-  prisma = require('./prisma-browser').default;
-}
+// Create a variable to hold the appropriate Prisma client
+const prisma = prismaBrowser;
 
 import { InternshipFormData } from '@/types/company';
 
