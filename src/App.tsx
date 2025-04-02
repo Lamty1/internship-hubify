@@ -23,13 +23,9 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
-      // Handle errors at the query level to prevent crashes
-      onError: (error) => {
-        console.error('Query error:', error);
-      }
     },
     mutations: {
-      // Handle errors at the mutation level to prevent crashes
+      // Use correct format for error handling in tanstack v5+
       onError: (error) => {
         console.error('Mutation error:', error);
       }
