@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, GraduationCap, Building2 } from 'lucide-react';
+import { ArrowLeft, GraduationCap, Building2, Github, Linkedin, Mail } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
@@ -12,7 +12,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createUser } from '@/lib/api';
+import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { useAuthManager } from '@/lib/auth-utils';
+import { useAuth0 } from '@auth0/auth0-react';
+import { useEffect } from 'react';
 
 // Form validation schema
 const registerSchema = z.object({
@@ -31,6 +35,8 @@ const Register = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'student' | 'company'>('student');
+  const { handleLogin, syncUserWithDatabase } = useAuthManager();
+  const { isAuthenticated, isLoading: authLoading } = useAuth0();
   
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -41,23 +47,26 @@ const Register = () => {
     }
   });
 
+  // Check if user is already authenticated and redirect if needed
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      // Sync user with database before redirecting
+      syncUserWithDatabase().then(() => {
+        const redirectPath = selectedRole === 'company' ? '/company-dashboard' : '/student-dashboard';
+        navigate(redirectPath);
+      });
+    }
+  }, [isAuthenticated, authLoading, navigate, selectedRole, syncUserWithDatabase]);
+
   const handleSignUp = async (values: RegisterFormValues) => {
     setIsLoading(true);
     try {
-      // Create user with selected role
-      await createUser(values.email, values.password, selectedRole);
-      
+      // For now, we'll just show a toast indicating that manual registration is not the primary method
       toast({
-        title: "Registration successful!",
-        description: "Your account has been created. Welcome to Sattejli!",
+        title: "Auth0 is preferred",
+        description: "Please use the social login options for a better experience.",
       });
-      
-      // Navigate to appropriate onboarding based on user role
-      if (selectedRole === 'company') {
-        navigate('/company-onboarding');
-      } else {
-        navigate('/student-onboarding');
-      }
+      setIsLoading(false);
     } catch (error) {
       console.error('Registration error:', error);
       toast({
@@ -65,10 +74,22 @@ const Register = () => {
         description: "There was a problem creating your account. Please try again.",
         variant: "destructive"
       });
-    } finally {
       setIsLoading(false);
     }
   };
+
+  const handleSocialLogin = (provider: string) => {
+    setIsLoading(true);
+    handleLogin();
+  };
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Loading authentication...</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -105,6 +126,52 @@ const Register = () => {
               </p>
             </TabsContent>
           </Tabs>
+          
+          {/* Social Login Options */}
+          <div className="mb-6">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex flex-col space-y-3">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start" 
+                    onClick={() => handleSocialLogin('GitHub')}
+                    disabled={isLoading}
+                  >
+                    <Github className="mr-2 h-4 w-4" />
+                    <span>Continue with GitHub</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start" 
+                    onClick={() => handleSocialLogin('LinkedIn')}
+                    disabled={isLoading}
+                  >
+                    <Linkedin className="mr-2 h-4 w-4" />
+                    <span>Continue with LinkedIn</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start" 
+                    onClick={() => handleSocialLogin('Gmail')}
+                    disabled={isLoading}
+                  >
+                    <Mail className="mr-2 h-4 w-4" />
+                    <span>Continue with Gmail</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <Separator className="w-full" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-white px-2 text-sm text-gray-500">Or continue with email</span>
+            </div>
+          </div>
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSignUp)} className="space-y-4">

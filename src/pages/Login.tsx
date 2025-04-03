@@ -12,9 +12,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getUserByEmail } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { useAuthManager } from '@/lib/auth-utils';
+import { useAuth0 } from '@auth0/auth0-react';
+import { useEffect } from 'react';
 
 // Form validation schema
 const loginSchema = z.object({
@@ -29,6 +31,8 @@ const Login = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'student' | 'company'>('student');
+  const { handleLogin, syncUserWithDatabase } = useAuthManager();
+  const { isAuthenticated, isLoading: authLoading } = useAuth0();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -38,33 +42,26 @@ const Login = () => {
     }
   });
 
-  const handleLogin = async (values: LoginFormValues) => {
+  // Check if user is already authenticated and redirect if needed
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      // Sync user with database before redirecting
+      syncUserWithDatabase().then(() => {
+        const redirectPath = selectedRole === 'company' ? '/company-dashboard' : '/student-dashboard';
+        navigate(redirectPath);
+      });
+    }
+  }, [isAuthenticated, authLoading, navigate, selectedRole, syncUserWithDatabase]);
+
+  const handleManualLogin = async (values: LoginFormValues) => {
     setIsLoading(true);
     try {
-      // Check if user exists in our database
-      const user = await getUserByEmail(values.email);
-      
-      if (!user || user.password !== values.password) {
-        toast({
-          title: "Login failed",
-          description: "Invalid email or password. Please try again.",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-        return;
-      }
-      
+      // For now, we'll just show a toast indicating that manual login is not the primary method
       toast({
-        title: "Login successful",
-        description: "Welcome back to Sattejli!",
+        title: "Auth0 is preferred",
+        description: "Please use the social login options for a better experience.",
       });
-      
-      // Navigate to appropriate dashboard based on user role
-      if (user.role === 'company') {
-        navigate('/company-dashboard');
-      } else {
-        navigate('/student-dashboard');
-      }
+      setIsLoading(false);
     } catch (error) {
       console.error('Login error:', error);
       toast({
@@ -72,19 +69,22 @@ const Login = () => {
         description: "There was a problem logging in. Please try again.",
         variant: "destructive"
       });
-    } finally {
       setIsLoading(false);
     }
   };
 
   const handleSocialLogin = (provider: string) => {
     setIsLoading(true);
-    toast({
-      title: `${provider} login`,
-      description: `${provider} authentication is not yet implemented.`,
-    });
-    setIsLoading(false);
+    handleLogin();
   };
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Loading authentication...</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -131,6 +131,7 @@ const Login = () => {
                     variant="outline" 
                     className="w-full justify-start" 
                     onClick={() => handleSocialLogin('GitHub')}
+                    disabled={isLoading}
                   >
                     <Github className="mr-2 h-4 w-4" />
                     <span>Continue with GitHub</span>
@@ -139,6 +140,7 @@ const Login = () => {
                     variant="outline" 
                     className="w-full justify-start" 
                     onClick={() => handleSocialLogin('LinkedIn')}
+                    disabled={isLoading}
                   >
                     <Linkedin className="mr-2 h-4 w-4" />
                     <span>Continue with LinkedIn</span>
@@ -147,6 +149,7 @@ const Login = () => {
                     variant="outline" 
                     className="w-full justify-start" 
                     onClick={() => handleSocialLogin('Gmail')}
+                    disabled={isLoading}
                   >
                     <Mail className="mr-2 h-4 w-4" />
                     <span>Continue with Gmail</span>
@@ -166,7 +169,7 @@ const Login = () => {
           </div>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleLogin)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(handleManualLogin)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="email"

@@ -1,5 +1,7 @@
 
 import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
+import { useEffect, useState } from 'react';
 import { useAuthManager } from '@/lib/auth-utils';
 
 interface ProtectedRouteProps {
@@ -8,11 +10,25 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
-  const { isAuthenticated, isLoading, user } = useAuthManager();
+  const { isAuthenticated, isLoading, user } = useAuth0();
+  const { syncUserWithDatabase } = useAuthManager();
   const location = useLocation();
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  if (isLoading) {
-    // Show loading state while checking authentication
+  useEffect(() => {
+    const syncUser = async () => {
+      if (isAuthenticated && user) {
+        setIsSyncing(true);
+        await syncUserWithDatabase();
+        setIsSyncing(false);
+      }
+    };
+
+    syncUser();
+  }, [isAuthenticated, user, syncUserWithDatabase]);
+
+  if (isLoading || isSyncing) {
+    // Show loading state while checking authentication or syncing with database
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
@@ -22,7 +38,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
   }
 
   // If role is required, check if user has the required role
-  if (requiredRole && user?.['https://sattejli.com/roles'] !== requiredRole) {
+  if (requiredRole && user?.['https://your-domain.com/roles'] !== requiredRole) {
     // Redirect to unauthorized page or dashboard
     return <Navigate to="/" replace />;
   }
