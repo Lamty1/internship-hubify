@@ -17,11 +17,11 @@ async function main() {
 
   console.log('Clean up complete. Creating seed data...');
 
-  // Create users
+  // Create users - use auth0_ prefix for password to indicate Auth0 managed users
   const companyUser = await prisma.user.create({
     data: {
       email: 'company@example.com',
-      password: await hash('password123', 10),
+      password: await hash('auth0_company', 10),
       role: 'company',
     },
   });
@@ -29,7 +29,7 @@ async function main() {
   const studentUser = await prisma.user.create({
     data: {
       email: 'student@example.com',
-      password: await hash('password123', 10),
+      password: await hash('auth0_student', 10),
       role: 'student',
     },
   });

@@ -4,6 +4,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { useEffect, useState } from 'react';
 import { useAuthManager } from '@/lib/auth-utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -13,6 +14,7 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
   const { isAuthenticated, isLoading, user } = useAuth0();
   const { syncUserWithDatabase, getUserRole } = useAuthManager();
+  const { toast } = useToast();
   const location = useLocation();
   const [isSyncing, setIsSyncing] = useState(false);
   const [role, setRole] = useState<string | null>(null);
@@ -32,13 +34,22 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
         
         setIsSyncing(false);
         setIsCheckingRole(false);
+        
+        // Notify if role doesn't match required role
+        if (requiredRole && userRole !== requiredRole) {
+          toast({
+            title: "Access restricted",
+            description: `You need ${requiredRole} role to access this page.`,
+            variant: "destructive"
+          });
+        }
       } else {
         setIsCheckingRole(false);
       }
     };
 
     syncUser();
-  }, [isAuthenticated, user, syncUserWithDatabase, getUserRole]);
+  }, [isAuthenticated, user, syncUserWithDatabase, getUserRole, requiredRole, toast]);
 
   if (isLoading || isSyncing || (isAuthenticated && isCheckingRole)) {
     // Show loading state with skeletons for better UX

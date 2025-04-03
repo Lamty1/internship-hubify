@@ -9,6 +9,8 @@ export const Auth0ProviderWithNavigate = ({ children }: { children: React.ReactN
   const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID || "your-auth0-client-id";
   const redirectUri = window.location.origin;
   const audience = import.meta.env.VITE_AUTH0_AUDIENCE || `https://${domain}/api/v2/`;
+  // Use a consistent namespace for roles
+  const namespace = import.meta.env.VITE_AUTH0_NAMESPACE || 'https://your-domain.com';
 
   const onRedirectCallback = (appState: any) => {
     navigate(appState?.returnTo || window.location.pathname);

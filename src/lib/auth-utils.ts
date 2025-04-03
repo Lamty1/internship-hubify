@@ -1,4 +1,3 @@
-
 import { useAuth0 } from '@auth0/auth0-react';
 import { getUserByEmail, createUser } from './api';
 import { useToast } from '@/hooks/use-toast';
@@ -6,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 export const useAuthManager = () => {
   const { loginWithRedirect, logout, user, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
   const { toast } = useToast();
+  const namespace = import.meta.env.VITE_AUTH0_NAMESPACE || 'https://your-domain.com';
 
   const handleLogin = async (redirectPath?: string) => {
     try {
@@ -26,45 +26,44 @@ export const useAuthManager = () => {
     logout({ logoutParams: { returnTo: window.location.origin } });
   };
 
-  // Sync Auth0 user with our database
+  const extractRoleFromAuth0User = (user: any): string => {
+    console.log("Extracting role from user data:", user);
+    
+    const possibleRoleSources = [
+      user[`${namespace}/roles`],
+      user.roles,
+      user[`${import.meta.env.VITE_AUTH0_DOMAIN}/roles`],
+      user['https://your-domain.com/roles'],
+      user.app_metadata?.roles
+    ];
+    
+    for (const source of possibleRoleSources) {
+      if (Array.isArray(source) && source.length > 0) {
+        console.log("Found roles in:", source);
+        if (source.includes('company')) {
+          return 'company';
+        }
+        return source[0];
+      }
+    }
+    
+    console.log("No roles found, defaulting to student");
+    return 'student';
+  };
+
   const syncUserWithDatabase = async () => {
     if (user?.email && isAuthenticated) {
       try {
-        // Check if user exists in our database
         const dbUser = await getUserByEmail(user.email);
         
         if (!dbUser) {
-          // Determine user role based on Auth0 metadata or default to student
-          // Try multiple ways to extract roles from Auth0 user data
-          let role = 'student'; // Default role
-          
-          // Check for roles in different locations where Auth0 might store them
-          if (user['https://your-domain.com/roles'] && Array.isArray(user['https://your-domain.com/roles'])) {
-            // Custom namespace approach
-            const roles = user['https://your-domain.com/roles'];
-            if (roles.includes('company')) {
-              role = 'company';
-            }
-          } else if (user.roles && Array.isArray(user.roles)) {
-            // Direct roles property
-            if (user.roles.includes('company')) {
-              role = 'company';
-            }
-          } else if (user[`${import.meta.env.VITE_AUTH0_DOMAIN}/roles`] && 
-                    Array.isArray(user[`${import.meta.env.VITE_AUTH0_DOMAIN}/roles`])) {
-            // Domain-specific namespace
-            const roles = user[`${import.meta.env.VITE_AUTH0_DOMAIN}/roles`];
-            if (roles.includes('company')) {
-              role = 'company';
-            }
-          }
+          const role = extractRoleFromAuth0User(user);
           
           console.log("Creating new user with role:", role);
           
-          // Create new user in database with Auth0 data
           await createUser(
             user.email,
-            'auth0_' + user.sub, // Use auth0 ID as password placeholder
+            'auth0_' + user.sub,
             role
           );
           
@@ -88,7 +87,6 @@ export const useAuthManager = () => {
     return null;
   };
 
-  // Get user role from database
   const getUserRole = async (): Promise<string | null> => {
     if (user?.email && isAuthenticated) {
       try {
