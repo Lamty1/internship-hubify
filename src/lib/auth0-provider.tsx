@@ -8,6 +8,7 @@ export const Auth0ProviderWithNavigate = ({ children }: { children: React.ReactN
   const domain = import.meta.env.VITE_AUTH0_DOMAIN || "your-auth0-domain.auth0.com";
   const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID || "your-auth0-client-id";
   const redirectUri = window.location.origin;
+  const audience = import.meta.env.VITE_AUTH0_AUDIENCE || `https://${domain}/api/v2/`;
 
   const onRedirectCallback = (appState: any) => {
     navigate(appState?.returnTo || window.location.pathname);
@@ -19,8 +20,8 @@ export const Auth0ProviderWithNavigate = ({ children }: { children: React.ReactN
       clientId={clientId}
       authorizationParams={{
         redirect_uri: redirectUri,
-        audience: `https://${domain}/api/v2/`,
-        scope: 'openid profile email'
+        audience: audience,
+        scope: 'openid profile email read:roles'
       }}
       onRedirectCallback={onRedirectCallback}
     >

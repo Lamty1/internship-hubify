@@ -3,6 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useEffect, useState } from 'react';
 import { useAuthManager } from '@/lib/auth-utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -20,11 +21,13 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
   useEffect(() => {
     const syncUser = async () => {
       if (isAuthenticated && user) {
+        console.log("Authenticated user:", user);
         setIsSyncing(true);
         await syncUserWithDatabase();
         
         // Get user role
         const userRole = await getUserRole();
+        console.log("User role from database:", userRole);
         setRole(userRole);
         
         setIsSyncing(false);
@@ -38,8 +41,15 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
   }, [isAuthenticated, user, syncUserWithDatabase, getUserRole]);
 
   if (isLoading || isSyncing || (isAuthenticated && isCheckingRole)) {
-    // Show loading state while checking authentication or syncing with database
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    // Show loading state with skeletons for better UX
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 space-y-4">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-32 w-96" />
+        <Skeleton className="h-8 w-48" />
+        <p className="text-sm text-muted-foreground">Loading your profile...</p>
+      </div>
+    );
   }
 
   if (!isAuthenticated) {

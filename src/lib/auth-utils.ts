@@ -35,7 +35,31 @@ export const useAuthManager = () => {
         
         if (!dbUser) {
           // Determine user role based on Auth0 metadata or default to student
-          const role = user['https://your-domain.com/roles'] || 'student';
+          // Try multiple ways to extract roles from Auth0 user data
+          let role = 'student'; // Default role
+          
+          // Check for roles in different locations where Auth0 might store them
+          if (user['https://your-domain.com/roles'] && Array.isArray(user['https://your-domain.com/roles'])) {
+            // Custom namespace approach
+            const roles = user['https://your-domain.com/roles'];
+            if (roles.includes('company')) {
+              role = 'company';
+            }
+          } else if (user.roles && Array.isArray(user.roles)) {
+            // Direct roles property
+            if (user.roles.includes('company')) {
+              role = 'company';
+            }
+          } else if (user[`${import.meta.env.VITE_AUTH0_DOMAIN}/roles`] && 
+                    Array.isArray(user[`${import.meta.env.VITE_AUTH0_DOMAIN}/roles`])) {
+            // Domain-specific namespace
+            const roles = user[`${import.meta.env.VITE_AUTH0_DOMAIN}/roles`];
+            if (roles.includes('company')) {
+              role = 'company';
+            }
+          }
+          
+          console.log("Creating new user with role:", role);
           
           // Create new user in database with Auth0 data
           await createUser(
