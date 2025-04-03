@@ -1,3 +1,4 @@
+
 import { useAuth0 } from '@auth0/auth0-react';
 import { getUserByEmail, createUser } from './api';
 import { useToast } from '@/hooks/use-toast';
@@ -29,6 +30,7 @@ export const useAuthManager = () => {
   const extractRoleFromAuth0User = (user: any): string => {
     console.log("Extracting role from user data:", user);
     
+    // Try different locations where Auth0 might store roles data
     const possibleRoleSources = [
       user[`${namespace}/roles`],
       user.roles,
@@ -37,30 +39,47 @@ export const useAuthManager = () => {
       user.app_metadata?.roles
     ];
     
+    // Log all potential role sources for debugging
+    console.log("Checking possible role sources:", JSON.stringify(possibleRoleSources, null, 2));
+    
     for (const source of possibleRoleSources) {
       if (Array.isArray(source) && source.length > 0) {
         console.log("Found roles in:", source);
         if (source.includes('company')) {
           return 'company';
         }
-        return source[0];
+        if (source.includes('student')) {
+          return 'student';
+        }
+        return source[0]; // Default to first role
+      }
+    }
+    
+    // If role information is missing from Auth0, check for email patterns
+    // This is just a fallback if Auth0 roles aren't configured
+    if (user?.email) {
+      if (user.email.includes('company') || user.email.includes('business') || user.email.includes('corp')) {
+        return 'company';
       }
     }
     
     console.log("No roles found, defaulting to student");
-    return 'student';
+    return 'student'; // Default role
   };
 
   const syncUserWithDatabase = async () => {
     if (user?.email && isAuthenticated) {
       try {
+        console.log("Syncing user with local database:", user.email);
         const dbUser = await getUserByEmail(user.email);
         
         if (!dbUser) {
+          // Extract role from Auth0 user data
           const role = extractRoleFromAuth0User(user);
           
-          console.log("Creating new user with role:", role);
+          console.log("Creating new user in local database with role:", role);
           
+          // Create user in your local database with auth0 prefix for the ID
           await createUser(
             user.email,
             'auth0_' + user.sub,
@@ -69,8 +88,10 @@ export const useAuthManager = () => {
           
           toast({
             title: "Account synchronized",
-            description: "Your account has been created in our system.",
+            description: "Your account has been created in your local database.",
           });
+        } else {
+          console.log("User already exists in local database:", dbUser);
         }
         
         return dbUser;
@@ -78,7 +99,7 @@ export const useAuthManager = () => {
         console.error('Error syncing user with database:', error);
         toast({
           title: "Synchronization error",
-          description: "There was a problem syncing your account. Please try again.",
+          description: "There was a problem syncing your account with the local database. Please try again.",
           variant: "destructive"
         });
         return null;
@@ -90,9 +111,13 @@ export const useAuthManager = () => {
   const getUserRole = async (): Promise<string | null> => {
     if (user?.email && isAuthenticated) {
       try {
+        // First attempt to get role from local database
         const dbUser = await getUserByEmail(user.email);
         if (dbUser) {
           return dbUser.role;
+        } else {
+          // If not in database yet, extract from Auth0
+          return extractRoleFromAuth0User(user);
         }
       } catch (error) {
         console.error('Error getting user role:', error);

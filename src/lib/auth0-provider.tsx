@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 export const Auth0ProviderWithNavigate = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
 
+  // Get Auth0 configuration from environment variables
   const domain = import.meta.env.VITE_AUTH0_DOMAIN || "your-auth0-domain.auth0.com";
   const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID || "your-auth0-client-id";
   const redirectUri = window.location.origin;
@@ -26,6 +27,7 @@ export const Auth0ProviderWithNavigate = ({ children }: { children: React.ReactN
         scope: 'openid profile email read:roles'
       }}
       onRedirectCallback={onRedirectCallback}
+      cacheLocation="localstorage"
     >
       {children}
     </Auth0Provider>

@@ -25,11 +25,13 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
       if (isAuthenticated && user) {
         console.log("Authenticated user:", user);
         setIsSyncing(true);
+        
+        // Sync user with local database
         await syncUserWithDatabase();
         
         // Get user role
         const userRole = await getUserRole();
-        console.log("User role from database:", userRole);
+        console.log("User role from database or Auth0:", userRole);
         setRole(userRole);
         
         setIsSyncing(false);
@@ -58,7 +60,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-32 w-96" />
         <Skeleton className="h-8 w-48" />
-        <p className="text-sm text-muted-foreground">Loading your profile...</p>
+        <p className="text-sm text-muted-foreground">Loading your profile and syncing with local database...</p>
       </div>
     );
   }
