@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +15,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useAuthManager } from '@/lib/auth-utils';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useEffect } from 'react';
 
 // Form validation schema
 const loginSchema = z.object({
@@ -31,7 +29,7 @@ const Login = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'student' | 'company'>('student');
-  const { handleLogin, syncUserWithDatabase } = useAuthManager();
+  const { handleLogin, syncUserWithDatabase, getUserRole } = useAuthManager();
   const { isAuthenticated, isLoading: authLoading } = useAuth0();
 
   const form = useForm<LoginFormValues>({
@@ -44,14 +42,24 @@ const Login = () => {
 
   // Check if user is already authenticated and redirect if needed
   useEffect(() => {
-    if (isAuthenticated && !authLoading) {
-      // Sync user with database before redirecting
-      syncUserWithDatabase().then(() => {
-        const redirectPath = selectedRole === 'company' ? '/company-dashboard' : '/student-dashboard';
-        navigate(redirectPath);
-      });
-    }
-  }, [isAuthenticated, authLoading, navigate, selectedRole, syncUserWithDatabase]);
+    const checkAuthAndRedirect = async () => {
+      if (isAuthenticated && !authLoading) {
+        // Sync user with database before redirecting
+        await syncUserWithDatabase();
+        
+        // Get user role and redirect accordingly
+        const userRole = await getUserRole();
+        
+        if (userRole === 'company') {
+          navigate('/company-dashboard');
+        } else {
+          navigate('/student-dashboard');
+        }
+      }
+    };
+    
+    checkAuthAndRedirect();
+  }, [isAuthenticated, authLoading, navigate, syncUserWithDatabase, getUserRole]);
 
   const handleManualLogin = async (values: LoginFormValues) => {
     setIsLoading(true);
@@ -75,7 +83,9 @@ const Login = () => {
 
   const handleSocialLogin = (provider: string) => {
     setIsLoading(true);
-    handleLogin();
+    // Pass the selected role as metadata to be used during user creation
+    const redirectPath = selectedRole === 'company' ? '/company-dashboard' : '/student-dashboard';
+    handleLogin(redirectPath);
   };
 
   if (authLoading) {

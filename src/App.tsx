@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -18,6 +19,7 @@ import CompanyProfile from '@/pages/CompanyProfile';
 import PostInternship from '@/pages/PostInternship';
 import ApplicantProfile from '@/pages/ApplicantProfile';
 import NotFound from '@/pages/NotFound';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 // Create a client with defaultOptions to handle errors gracefully
 const queryClient = new QueryClient({
@@ -41,17 +43,59 @@ function App() {
       <Router>
         <Auth0ProviderWithNavigate>
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/company-dashboard" element={<CompanyDashboard />} />
-            <Route path="/student-dashboard" element={<StudentDashboard />} />
-            <Route path="/internships" element={<Internships />} />
-            <Route path="/internships/:id" element={<InternshipDetail />} />
-            <Route path="/student-profile" element={<StudentProfile />} />
-            <Route path="/company-profile" element={<CompanyProfile />} />
-            <Route path="/post-internship" element={<PostInternship />} />
-            <Route path="/applicant-profile/:id" element={<ApplicantProfile />} />
+            
+            {/* Protected routes with required roles */}
+            <Route path="/company-dashboard" element={
+              <ProtectedRoute requiredRole="company">
+                <CompanyDashboard />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/student-dashboard" element={
+              <ProtectedRoute requiredRole="student">
+                <StudentDashboard />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/internships" element={
+              <ProtectedRoute>
+                <Internships />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/internships/:id" element={
+              <ProtectedRoute>
+                <InternshipDetail />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/student-profile" element={
+              <ProtectedRoute requiredRole="student">
+                <StudentProfile />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/company-profile" element={
+              <ProtectedRoute requiredRole="company">
+                <CompanyProfile />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/post-internship" element={
+              <ProtectedRoute requiredRole="company">
+                <PostInternship />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/applicant-profile/:id" element={
+              <ProtectedRoute requiredRole="company">
+                <ApplicantProfile />
+              </ProtectedRoute>
+            } />
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />

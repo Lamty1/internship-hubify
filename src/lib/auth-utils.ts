@@ -7,9 +7,11 @@ export const useAuthManager = () => {
   const { loginWithRedirect, logout, user, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
   const { toast } = useToast();
 
-  const handleLogin = async () => {
+  const handleLogin = async (redirectPath?: string) => {
     try {
-      await loginWithRedirect();
+      await loginWithRedirect({
+        appState: redirectPath ? { returnTo: redirectPath } : undefined
+      });
     } catch (error) {
       console.error('Login error:', error);
       toast({
@@ -62,6 +64,21 @@ export const useAuthManager = () => {
     return null;
   };
 
+  // Get user role from database
+  const getUserRole = async (): Promise<string | null> => {
+    if (user?.email && isAuthenticated) {
+      try {
+        const dbUser = await getUserByEmail(user.email);
+        if (dbUser) {
+          return dbUser.role;
+        }
+      } catch (error) {
+        console.error('Error getting user role:', error);
+      }
+    }
+    return null;
+  };
+
   return {
     user,
     isAuthenticated,
@@ -69,6 +86,7 @@ export const useAuthManager = () => {
     handleLogin,
     handleLogout,
     syncUserWithDatabase,
+    getUserRole,
     getAccessTokenSilently
   };
 };
