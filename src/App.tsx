@@ -3,8 +3,8 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// Import Auth0 provider
-import { Auth0ProviderWithNavigate } from '@/lib/auth0-provider';
+// Import Supabase Auth provider
+import { SupabaseAuthProvider } from '@/lib/supabase-auth-provider';
 
 // Import pages
 import Index from '@/pages/Index';
@@ -41,7 +41,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <Auth0ProviderWithNavigate>
+        <SupabaseAuthProvider>
           <Routes>
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/login" element={<Login />} />
@@ -99,7 +99,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />
-        </Auth0ProviderWithNavigate>
+        </SupabaseAuthProvider>
       </Router>
     </QueryClientProvider>
   );

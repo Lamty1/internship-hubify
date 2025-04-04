@@ -1,6 +1,5 @@
 
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth0 } from '@auth0/auth0-react';
 import { useEffect, useState } from 'react';
 import { useAuthManager } from '@/lib/auth-utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,7 +11,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
-  const { isAuthenticated, isLoading, user } = useAuth0();
+  const { isAuthenticated, isLoading, user } = useAuthManager();
   const { syncUserWithDatabase, getUserRole } = useAuthManager();
   const { toast } = useToast();
   const location = useLocation();
@@ -31,7 +30,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
         
         // Get user role
         const userRole = await getUserRole();
-        console.log("User role from database or Auth0:", userRole);
+        console.log("User role from database:", userRole);
         setRole(userRole);
         
         setIsSyncing(false);

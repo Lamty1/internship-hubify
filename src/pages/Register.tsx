@@ -1,10 +1,10 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, GraduationCap, Building2, Github, Linkedin, Mail } from 'lucide-react';
+import { ArrowLeft, GraduationCap, Building2, Github, Mail } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
@@ -15,8 +15,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useAuthManager } from '@/lib/auth-utils';
-import { useAuth0 } from '@auth0/auth0-react';
-import { useEffect } from 'react';
+import { useSupabaseAuth } from '@/lib/supabase-auth-provider';
+import { supabase } from '@/integrations/supabase/client';
 
 // Form validation schema
 const registerSchema = z.object({
@@ -35,8 +35,8 @@ const Register = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'student' | 'company'>('student');
-  const { handleLogin, syncUserWithDatabase } = useAuthManager();
-  const { isAuthenticated, isLoading: authLoading } = useAuth0();
+  const { syncUserWithDatabase } = useAuthManager();
+  const { isAuthenticated, isLoading: authLoading, signUp } = useSupabaseAuth();
   
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -61,26 +61,40 @@ const Register = () => {
   const handleSignUp = async (values: RegisterFormValues) => {
     setIsLoading(true);
     try {
-      // For now, we'll just show a toast indicating that manual registration is not the primary method
-      toast({
-        title: "Auth0 is preferred",
-        description: "Please use the social login options for a better experience.",
-      });
-      setIsLoading(false);
+      await signUp(values.email, values.password, selectedRole);
+      // Redirect will be handled by the effect hook once authenticated
     } catch (error) {
-      console.error('Registration error:', error);
+      setIsLoading(false);
+      // Error is already handled in signUp function
+    }
+  };
+
+  const handleSocialLogin = async (provider: 'github' | 'google') => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: provider,
+        options: {
+          redirectTo: `${window.location.origin}/`,
+          queryParams: {
+            role: selectedRole, // Pass role as metadata
+          }
+        }
+      });
+      
+      if (error) {
+        throw error;
+      }
+      // Redirect is handled by Supabase
+    } catch (error: any) {
+      console.error(`${provider} login error:`, error);
       toast({
         title: "Registration failed",
-        description: "There was a problem creating your account. Please try again.",
+        description: error.message || `There was a problem registering with ${provider}.`,
         variant: "destructive"
       });
       setIsLoading(false);
     }
-  };
-
-  const handleSocialLogin = (provider: string) => {
-    setIsLoading(true);
-    handleLogin();
   };
 
   if (authLoading) {
@@ -135,7 +149,7 @@ const Register = () => {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start" 
-                    onClick={() => handleSocialLogin('GitHub')}
+                    onClick={() => handleSocialLogin('github')}
                     disabled={isLoading}
                   >
                     <Github className="mr-2 h-4 w-4" />
@@ -144,20 +158,11 @@ const Register = () => {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start" 
-                    onClick={() => handleSocialLogin('LinkedIn')}
-                    disabled={isLoading}
-                  >
-                    <Linkedin className="mr-2 h-4 w-4" />
-                    <span>Continue with LinkedIn</span>
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start" 
-                    onClick={() => handleSocialLogin('Gmail')}
+                    onClick={() => handleSocialLogin('google')}
                     disabled={isLoading}
                   >
                     <Mail className="mr-2 h-4 w-4" />
-                    <span>Continue with Gmail</span>
+                    <span>Continue with Google</span>
                   </Button>
                 </div>
               </CardContent>

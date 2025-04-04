@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useAuthManager } from '@/lib/auth-utils';
-import { useAuth0 } from '@auth0/auth0-react';
+import { useSupabaseAuth } from '@/lib/supabase-auth-provider';
+import { supabase } from '@/integrations/supabase/client';
 
 // Form validation schema
 const loginSchema = z.object({
@@ -29,8 +31,8 @@ const Login = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'student' | 'company'>('student');
-  const { handleLogin, syncUserWithDatabase, getUserRole } = useAuthManager();
-  const { isAuthenticated, isLoading: authLoading } = useAuth0();
+  const { syncUserWithDatabase, getUserRole } = useAuthManager();
+  const { isAuthenticated, isLoading: authLoading, signIn } = useSupabaseAuth();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -61,31 +63,43 @@ const Login = () => {
     checkAuthAndRedirect();
   }, [isAuthenticated, authLoading, navigate, syncUserWithDatabase, getUserRole]);
 
-  const handleManualLogin = async (values: LoginFormValues) => {
+  const handleFormLogin = async (values: LoginFormValues) => {
     setIsLoading(true);
     try {
-      // For now, we'll just show a toast indicating that manual login is not the primary method
-      toast({
-        title: "Auth0 is preferred",
-        description: "Please use the social login options for a better experience.",
-      });
-      setIsLoading(false);
+      await signIn(values.email, values.password);
+      // Redirect will be handled by the effect hook
     } catch (error) {
-      console.error('Login error:', error);
+      setIsLoading(false);
+      // Error is already handled in signIn function
+    }
+  };
+
+  const handleSocialLogin = async (provider: 'github' | 'google') => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: provider,
+        options: {
+          redirectTo: `${window.location.origin}/`,
+          queryParams: {
+            role: selectedRole, // Pass role as metadata
+          }
+        }
+      });
+      
+      if (error) {
+        throw error;
+      }
+      // Redirect is handled by Supabase
+    } catch (error: any) {
+      console.error(`${provider} login error:`, error);
       toast({
         title: "Login failed",
-        description: "There was a problem logging in. Please try again.",
+        description: error.message || `There was a problem logging in with ${provider}.`,
         variant: "destructive"
       });
       setIsLoading(false);
     }
-  };
-
-  const handleSocialLogin = (provider: string) => {
-    setIsLoading(true);
-    // Pass the selected role as metadata to be used during user creation
-    const redirectPath = selectedRole === 'company' ? '/company-dashboard' : '/student-dashboard';
-    handleLogin(redirectPath);
   };
 
   if (authLoading) {
@@ -140,7 +154,7 @@ const Login = () => {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start" 
-                    onClick={() => handleSocialLogin('GitHub')}
+                    onClick={() => handleSocialLogin('github')}
                     disabled={isLoading}
                   >
                     <Github className="mr-2 h-4 w-4" />
@@ -149,20 +163,11 @@ const Login = () => {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start" 
-                    onClick={() => handleSocialLogin('LinkedIn')}
-                    disabled={isLoading}
-                  >
-                    <Linkedin className="mr-2 h-4 w-4" />
-                    <span>Continue with LinkedIn</span>
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start" 
-                    onClick={() => handleSocialLogin('Gmail')}
+                    onClick={() => handleSocialLogin('google')}
                     disabled={isLoading}
                   >
                     <Mail className="mr-2 h-4 w-4" />
-                    <span>Continue with Gmail</span>
+                    <span>Continue with Google</span>
                   </Button>
                 </div>
               </CardContent>
@@ -179,7 +184,7 @@ const Login = () => {
           </div>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleManualLogin)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(handleFormLogin)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="email"
