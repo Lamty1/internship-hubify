@@ -14,7 +14,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { useAuthManager } from '@/lib/auth-utils';
 import { useSupabaseAuth } from '@/lib/supabase-auth-provider';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -35,8 +34,7 @@ const Register = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'student' | 'company'>('student');
-  const { syncUserWithDatabase } = useAuthManager();
-  const { isAuthenticated, isLoading: authLoading, signUp } = useSupabaseAuth();
+  const { isAuthenticated, isLoading: authLoading, signUp, getUserRole } = useSupabaseAuth();
   
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -49,20 +47,44 @@ const Register = () => {
 
   // Check if user is already authenticated and redirect if needed
   useEffect(() => {
-    if (isAuthenticated && !authLoading) {
-      // Sync user with database before redirecting
-      syncUserWithDatabase().then(() => {
-        const redirectPath = selectedRole === 'company' ? '/company-dashboard' : '/student-dashboard';
-        navigate(redirectPath);
-      });
-    }
-  }, [isAuthenticated, authLoading, navigate, selectedRole, syncUserWithDatabase]);
+    const checkAuthAndRedirect = async () => {
+      if (isAuthenticated && !authLoading) {
+        try {
+          // Get user role and redirect accordingly
+          const userRole = await getUserRole();
+          console.log("User registered with role:", userRole);
+          
+          if (userRole === 'company') {
+            navigate('/company-dashboard');
+          } else {
+            navigate('/student-dashboard');
+          }
+        } catch (error) {
+          console.error("Error during auth redirect:", error);
+        }
+      }
+    };
+    
+    checkAuthAndRedirect();
+  }, [isAuthenticated, authLoading, navigate, getUserRole]);
 
   const handleSignUp = async (values: RegisterFormValues) => {
     setIsLoading(true);
     try {
       await signUp(values.email, values.password, selectedRole);
-      // Redirect will be handled by the effect hook once authenticated
+      
+      // Show registration success message
+      toast({
+        title: "Registration successful",
+        description: "Your account has been created. You'll be redirected to your dashboard shortly.",
+      });
+      
+      // Explicit redirect after successful registration
+      // The role is already set during signup
+      setTimeout(() => {
+        const redirectPath = selectedRole === 'company' ? '/company-dashboard' : '/student-dashboard';
+        navigate(redirectPath);
+      }, 1500);
     } catch (error) {
       setIsLoading(false);
       // Error is already handled in signUp function

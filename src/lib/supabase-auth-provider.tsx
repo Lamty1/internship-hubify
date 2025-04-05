@@ -66,7 +66,7 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error, data } = await supabase.auth.signInWithPassword({
         email,
         password
       });
@@ -119,7 +119,7 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
         description: "Your account has been created.",
       });
       
-      // We store the role in user metadata
+      // User will be automatically signed in after successful registration
     } catch (error: any) {
       console.error('Registration error:', error);
       throw error;
@@ -217,12 +217,13 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
           .single();
           
         if (error) {
-          console.error('Error getting user role:', error);
+          console.error('Error getting user role from database:', error);
           // If not in database yet, extract from user metadata
           return user.user_metadata?.role || 'student';
         }
         
         if (dbUser) {
+          console.log("Got user role from database:", dbUser.role);
           return dbUser.role;
         }
       } catch (error) {

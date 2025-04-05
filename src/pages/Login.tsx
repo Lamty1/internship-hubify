@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, GraduationCap, Building2, Github, Linkedin, Mail } from 'lucide-react';
+import { ArrowLeft, GraduationCap, Building2, Github, Mail } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
@@ -14,7 +14,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { useAuthManager } from '@/lib/auth-utils';
 import { useSupabaseAuth } from '@/lib/supabase-auth-provider';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -31,8 +30,7 @@ const Login = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'student' | 'company'>('student');
-  const { syncUserWithDatabase, getUserRole } = useAuthManager();
-  const { isAuthenticated, isLoading: authLoading, signIn } = useSupabaseAuth();
+  const { isAuthenticated, isLoading: authLoading, signIn, getUserRole } = useSupabaseAuth();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -46,22 +44,24 @@ const Login = () => {
   useEffect(() => {
     const checkAuthAndRedirect = async () => {
       if (isAuthenticated && !authLoading) {
-        // Sync user with database before redirecting
-        await syncUserWithDatabase();
-        
-        // Get user role and redirect accordingly
-        const userRole = await getUserRole();
-        
-        if (userRole === 'company') {
-          navigate('/company-dashboard');
-        } else {
-          navigate('/student-dashboard');
+        try {
+          // Get user role and redirect accordingly
+          const userRole = await getUserRole();
+          console.log("User authenticated with role:", userRole);
+          
+          if (userRole === 'company') {
+            navigate('/company-dashboard');
+          } else {
+            navigate('/student-dashboard');
+          }
+        } catch (error) {
+          console.error("Error during auth redirect:", error);
         }
       }
     };
     
     checkAuthAndRedirect();
-  }, [isAuthenticated, authLoading, navigate, syncUserWithDatabase, getUserRole]);
+  }, [isAuthenticated, authLoading, navigate, getUserRole]);
 
   const handleFormLogin = async (values: LoginFormValues) => {
     setIsLoading(true);
