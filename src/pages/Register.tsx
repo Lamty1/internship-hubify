@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -73,26 +72,27 @@ const Register = () => {
     try {
       await signUp(values.email, values.password, selectedRole);
       
-      // Show registration success message
-      toast({
-        title: "Registration successful",
-        description: "Your account has been created. You'll be redirected to your dashboard shortly.",
-      });
-      
       // Check if the user is authenticated after signup
       const { data } = await supabase.auth.getSession();
       if (data.session) {
         // If session exists, user is authenticated, redirect accordingly
         const dashboardPath = selectedRole === 'company' ? '/company-dashboard' : '/student-dashboard';
         
-        console.log("Redirecting to dashboard:", dashboardPath);
-        setTimeout(() => {
-          navigate(dashboardPath);
-        }, 1000);
+        // Show registration success message
+        toast({
+          title: "Registration successful",
+          description: "Your account has been created. You'll be redirected to your dashboard.",
+        });
+
+        console.log("Registration successful, redirecting to:", dashboardPath);
+        // Redirect to dashboard
+        navigate(dashboardPath);
       }
-    } catch (error) {
-      setIsLoading(false);
+    } catch (error: any) {
+      console.error("Registration error:", error);
       // Error is already handled in signUp function
+    } finally {
+      setIsLoading(false);
     }
   };
 

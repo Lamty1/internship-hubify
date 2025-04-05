@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -77,12 +76,12 @@ const Login = () => {
         
         console.log("Login successful, redirecting to:", dashboardPath);
         navigate(dashboardPath);
-      } else {
-        setIsLoading(false);
       }
     } catch (error: any) {
-      setIsLoading(false);
+      console.error("Login error:", error);
       // Error is already handled in signIn function
+    } finally {
+      setIsLoading(false);
     }
   };
 

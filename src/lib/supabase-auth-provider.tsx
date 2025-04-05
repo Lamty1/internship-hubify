@@ -64,7 +64,7 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
   }, []);
   
   // Sign in with email and password
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string): Promise<void> => {
     try {
       const { error, data } = await supabase.auth.signInWithPassword({
         email,
@@ -86,7 +86,7 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
         description: "Welcome back!"
       });
       
-      return data;
+      // Return void to match the interface
     } catch (error: any) {
       console.error('Login error:', error);
       throw error;
@@ -94,7 +94,7 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
   };
   
   // Sign up with email and password
-  const signUp = async (email: string, password: string, role: 'student' | 'company') => {
+  const signUp = async (email: string, password: string, role: 'student' | 'company'): Promise<void> => {
     try {
       const { error, data } = await supabase.auth.signUp({
         email,
@@ -129,7 +129,7 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
         });
       }
       
-      return data;
+      // Return void to match the interface
     } catch (error: any) {
       console.error('Registration error:', error);
       throw error;
