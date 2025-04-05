@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -51,7 +52,7 @@ const Register = () => {
         try {
           // Get user role and redirect accordingly
           const userRole = await getUserRole();
-          console.log("User registered with role:", userRole);
+          console.log("User authenticated with role:", userRole);
           
           if (userRole === 'company') {
             navigate('/company-dashboard');
@@ -70,13 +71,20 @@ const Register = () => {
   const handleSignUp = async (values: RegisterFormValues) => {
     setIsLoading(true);
     try {
+      console.log("Attempting signup with:", values.email, "role:", selectedRole);
       await signUp(values.email, values.password, selectedRole);
       
       // Check if the user is authenticated after signup
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error("Session error:", sessionError);
+        throw sessionError;
+      }
+      
+      if (sessionData.session) {
         // If session exists, user is authenticated, redirect accordingly
-        const dashboardPath = selectedRole === 'company' ? '/company-dashboard' : '/student-dashboard';
+        const userRole = await getUserRole();
+        const dashboardPath = userRole === 'company' ? '/company-dashboard' : '/student-dashboard';
         
         // Show registration success message
         toast({
@@ -87,6 +95,17 @@ const Register = () => {
         console.log("Registration successful, redirecting to:", dashboardPath);
         // Redirect to dashboard
         navigate(dashboardPath);
+      } else {
+        // If no session, show message to check email
+        toast({
+          title: "Registration successful",
+          description: "Please check your email to confirm your account before logging in.",
+        });
+        
+        // Redirect to login page
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
       }
     } catch (error: any) {
       console.error("Registration error:", error);
@@ -99,6 +118,7 @@ const Register = () => {
   const handleSocialLogin = async (provider: 'github' | 'google') => {
     setIsLoading(true);
     try {
+      console.log(`Attempting ${provider} signup with role:`, selectedRole);
       const { error } = await supabase.auth.signInWithOAuth({
         provider: provider,
         options: {

@@ -49,6 +49,7 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
 
     // Then check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log('Got session:', currentSession?.user?.email);
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       setIsLoading(false);
@@ -66,13 +67,14 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
   // Sign in with email and password
   const signIn = async (email: string, password: string): Promise<void> => {
     try {
+      console.log('Attempting login for:', email);
       const { error, data } = await supabase.auth.signInWithPassword({
         email,
         password
       });
       
       if (error) {
-        console.error('Login error:', error);
+        console.error('Login error details:', error);
         toast({
           title: "Login failed",
           description: error.message,
@@ -81,6 +83,7 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
         throw error;
       }
       
+      console.log('Login successful for:', email);
       toast({
         title: "Login successful",
         description: "Welcome back!"
@@ -96,6 +99,7 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
   // Sign up with email and password
   const signUp = async (email: string, password: string, role: 'student' | 'company'): Promise<void> => {
     try {
+      console.log('Attempting signup for:', email, 'with role:', role);
       const { error, data } = await supabase.auth.signUp({
         email,
         password,
@@ -116,13 +120,14 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
         throw error;
       }
       
+      console.log('Signup successful data:', data);
       toast({
         title: "Registration successful",
         description: "Your account has been created.",
       });
       
       // Important: The user might need to confirm their email before being fully authenticated
-      if (data?.user && data.session) {
+      if (data?.user && !data.session) {
         toast({
           title: "Email confirmation",
           description: "Please check your email to confirm your registration.",

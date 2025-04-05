@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -65,11 +66,17 @@ const Login = () => {
   const handleFormLogin = async (values: LoginFormValues) => {
     setIsLoading(true);
     try {
+      console.log("Attempting to login with:", values.email);
       await signIn(values.email, values.password);
       
       // Check if the user is authenticated after login
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error("Session error:", sessionError);
+        throw sessionError;
+      }
+      
+      if (sessionData.session) {
         // Get user role to determine which dashboard to redirect to
         const userRole = await getUserRole();
         const dashboardPath = userRole === 'company' ? '/company-dashboard' : '/student-dashboard';
@@ -79,7 +86,7 @@ const Login = () => {
       }
     } catch (error: any) {
       console.error("Login error:", error);
-      // Error is already handled in signIn function
+      // Additional error handling if needed - main error is already handled in signIn function
     } finally {
       setIsLoading(false);
     }
@@ -88,6 +95,7 @@ const Login = () => {
   const handleSocialLogin = async (provider: 'github' | 'google') => {
     setIsLoading(true);
     try {
+      console.log(`Attempting ${provider} login with role:`, selectedRole);
       const { error } = await supabase.auth.signInWithOAuth({
         provider: provider,
         options: {
