@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -72,14 +71,12 @@ const Register = () => {
     setIsLoading(true);
     try {
       console.log("Attempting signup with:", values.email, "role:", selectedRole);
+      
+      // Use the signUp function from the auth context
       await signUp(values.email, values.password, selectedRole);
       
       // Check if the user is authenticated after signup
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        console.error("Session error:", sessionError);
-        throw sessionError;
-      }
+      const { data: sessionData } = await supabase.auth.getSession();
       
       if (sessionData.session) {
         // If session exists, user is authenticated, redirect accordingly
@@ -102,7 +99,7 @@ const Register = () => {
           description: "Please check your email to confirm your account before logging in.",
         });
         
-        // Redirect to login page
+        // Add a slight delay before redirecting to login page
         setTimeout(() => {
           navigate('/login');
         }, 2000);

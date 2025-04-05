@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -67,14 +66,12 @@ const Login = () => {
     setIsLoading(true);
     try {
       console.log("Attempting to login with:", values.email);
+      
+      // Use the signIn function from the auth context
       await signIn(values.email, values.password);
       
       // Check if the user is authenticated after login
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        console.error("Session error:", sessionError);
-        throw sessionError;
-      }
+      const { data: sessionData } = await supabase.auth.getSession();
       
       if (sessionData.session) {
         // Get user role to determine which dashboard to redirect to
@@ -86,7 +83,7 @@ const Login = () => {
       }
     } catch (error: any) {
       console.error("Login error:", error);
-      // Additional error handling if needed - main error is already handled in signIn function
+      // Error is already handled in signIn function
     } finally {
       setIsLoading(false);
     }

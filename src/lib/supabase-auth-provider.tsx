@@ -90,6 +90,7 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
       });
       
       // Return void to match the interface
+      return;
     } catch (error: any) {
       console.error('Login error:', error);
       throw error;
@@ -121,10 +122,6 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
       }
       
       console.log('Signup successful data:', data);
-      toast({
-        title: "Registration successful",
-        description: "Your account has been created.",
-      });
       
       // Important: The user might need to confirm their email before being fully authenticated
       if (data?.user && !data.session) {
@@ -132,9 +129,15 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
           title: "Email confirmation",
           description: "Please check your email to confirm your registration.",
         });
+      } else if (data?.session) {
+        toast({
+          title: "Registration successful",
+          description: "Your account has been created.",
+        });
       }
       
       // Return void to match the interface
+      return;
     } catch (error: any) {
       console.error('Registration error:', error);
       throw error;
