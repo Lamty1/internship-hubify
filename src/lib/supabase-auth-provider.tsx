@@ -30,7 +30,7 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
   useEffect(() => {
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+      async (event, currentSession) => {
         console.log('Auth state change:', event);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
@@ -38,7 +38,7 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
         // Handle session changes
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           if (currentSession?.user) {
-            // Sync user with database when signed in
+            // Use setTimeout to prevent recursion issues
             setTimeout(() => {
               syncUserWithDatabase();
             }, 0);
@@ -72,6 +72,7 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
       });
       
       if (error) {
+        console.error('Login error:', error);
         toast({
           title: "Login failed",
           description: error.message,
@@ -85,7 +86,7 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
         description: "Welcome back!"
       });
       
-      // We don't need to navigate here as the onAuthStateChange handler will detect the session
+      return data;
     } catch (error: any) {
       console.error('Login error:', error);
       throw error;
@@ -102,6 +103,7 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
           data: {
             role: role,
           },
+          emailRedirectTo: `${window.location.origin}/`,
         },
       });
       
@@ -119,7 +121,15 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
         description: "Your account has been created.",
       });
       
-      // User will be automatically signed in after successful registration
+      // Important: The user might need to confirm their email before being fully authenticated
+      if (data?.user && data.session) {
+        toast({
+          title: "Email confirmation",
+          description: "Please check your email to confirm your registration.",
+        });
+      }
+      
+      return data;
     } catch (error: any) {
       console.error('Registration error:', error);
       throw error;
@@ -146,7 +156,7 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
           .from('users')
           .select('*')
           .eq('email', user.email)
-          .single();
+          .maybeSingle();
         
         if (fetchError && fetchError.code !== 'PGSQL_ERROR_NO_ROWS') {
           console.error('Error fetching user:', fetchError);
@@ -209,23 +219,33 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
   const getUserRole = async (): Promise<string | null> => {
     if (user?.email) {
       try {
+        console.log("Getting user role for email:", user.email);
+        
         // First attempt to get role from local database
         const { data: dbUser, error } = await supabase
           .from('users')
           .select('role')
           .eq('email', user.email)
-          .single();
-          
-        if (error) {
+          .maybeSingle();
+        
+        if (error && error.code !== 'PGSQL_ERROR_NO_ROWS') {
           console.error('Error getting user role from database:', error);
-          // If not in database yet, extract from user metadata
-          return user.user_metadata?.role || 'student';
         }
         
-        if (dbUser) {
+        if (dbUser?.role) {
           console.log("Got user role from database:", dbUser.role);
           return dbUser.role;
         }
+        
+        // If not found in database yet, extract from user metadata
+        const metadataRole = user.user_metadata?.role;
+        if (metadataRole) {
+          console.log("Got user role from metadata:", metadataRole);
+          return metadataRole;
+        }
+        
+        // Default to student if no role is found
+        return 'student';
       } catch (error) {
         console.error('Error getting user role:', error);
       }

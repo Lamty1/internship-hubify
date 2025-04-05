@@ -67,8 +67,20 @@ const Login = () => {
     setIsLoading(true);
     try {
       await signIn(values.email, values.password);
-      // Redirect will be handled by the effect hook
-    } catch (error) {
+      
+      // Check if the user is authenticated after login
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        // Get user role to determine which dashboard to redirect to
+        const userRole = await getUserRole();
+        const dashboardPath = userRole === 'company' ? '/company-dashboard' : '/student-dashboard';
+        
+        console.log("Login successful, redirecting to:", dashboardPath);
+        navigate(dashboardPath);
+      } else {
+        setIsLoading(false);
+      }
+    } catch (error: any) {
       setIsLoading(false);
       // Error is already handled in signIn function
     }

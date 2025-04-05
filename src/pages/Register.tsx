@@ -1,19 +1,19 @@
 
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, GraduationCap, Building2, Github, Mail } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { useSupabaseAuth } from '@/lib/supabase-auth-provider';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -79,12 +79,17 @@ const Register = () => {
         description: "Your account has been created. You'll be redirected to your dashboard shortly.",
       });
       
-      // Explicit redirect after successful registration
-      // The role is already set during signup
-      setTimeout(() => {
-        const redirectPath = selectedRole === 'company' ? '/company-dashboard' : '/student-dashboard';
-        navigate(redirectPath);
-      }, 1500);
+      // Check if the user is authenticated after signup
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        // If session exists, user is authenticated, redirect accordingly
+        const dashboardPath = selectedRole === 'company' ? '/company-dashboard' : '/student-dashboard';
+        
+        console.log("Redirecting to dashboard:", dashboardPath);
+        setTimeout(() => {
+          navigate(dashboardPath);
+        }, 1000);
+      }
     } catch (error) {
       setIsLoading(false);
       // Error is already handled in signUp function
