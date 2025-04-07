@@ -89,7 +89,6 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
         description: "Welcome back!"
       });
       
-      // Return void to match the interface
       return;
     } catch (error: any) {
       console.error('Login error:', error);
@@ -136,7 +135,6 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
         });
       }
       
-      // Return void to match the interface
       return;
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -155,18 +153,18 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
     }
   };
 
-  // Sync user with database
+  // Sync user with database - Updated to work with Supabase tables directly
   const syncUserWithDatabase = async () => {
     if (user?.email) {
       try {
-        console.log("Syncing user with local database:", user.email);
+        console.log("Syncing user with database:", user.email);
         const { data: existingUser, error: fetchError } = await supabase
           .from('users')
           .select('*')
           .eq('email', user.email)
           .maybeSingle();
         
-        if (fetchError && fetchError.code !== 'PGSQL_ERROR_NO_ROWS') {
+        if (fetchError) {
           console.error('Error fetching user:', fetchError);
           return null;
         }
@@ -175,9 +173,9 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
           // Extract role from user metadata
           const role = user.user_metadata?.role || 'student';
           
-          console.log("Creating new user in local database with role:", role);
+          console.log("Creating new user in database with role:", role);
           
-          // Create user in your local database
+          // Create user in your database
           const { data: newUser, error: insertError } = await supabase
             .from('users')
             .insert([
@@ -200,9 +198,43 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
             return null;
           }
           
+          // Now create the appropriate profile based on role
+          if (role === 'student') {
+            // Create empty student profile
+            const { error: studentError } = await supabase
+              .from('students')
+              .insert([
+                {
+                  user_id: newUser.id,
+                  first_name: '',
+                  last_name: ''
+                }
+              ]);
+              
+            if (studentError) {
+              console.error('Error creating student profile:', studentError);
+              return null;
+            }
+          } else if (role === 'company') {
+            // Create empty company profile
+            const { error: companyError } = await supabase
+              .from('companies')
+              .insert([
+                {
+                  user_id: newUser.id,
+                  name: ''
+                }
+              ]);
+              
+            if (companyError) {
+              console.error('Error creating company profile:', companyError);
+              return null;
+            }
+          }
+          
           toast({
-            title: "Account synchronized",
-            description: "Your account has been created in the database.",
+            title: "Account created",
+            description: `Your ${role} account has been created successfully.`,
           });
           
           return newUser;
@@ -223,20 +255,20 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
     return null;
   };
 
-  // Get user role
+  // Get user role - Updated to work with Supabase tables directly
   const getUserRole = async (): Promise<string | null> => {
     if (user?.email) {
       try {
         console.log("Getting user role for email:", user.email);
         
-        // First attempt to get role from local database
+        // Get role from users table
         const { data: dbUser, error } = await supabase
           .from('users')
           .select('role')
           .eq('email', user.email)
           .maybeSingle();
         
-        if (error && error.code !== 'PGSQL_ERROR_NO_ROWS') {
+        if (error) {
           console.error('Error getting user role from database:', error);
         }
         
