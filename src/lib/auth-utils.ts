@@ -1,6 +1,5 @@
 
-import { useSupabaseAuth } from './supabase-auth-provider';
-import { getUserByEmail, createUser } from './api';
+import { useSupabaseAuth } from './auth/supabase-auth-context';
 import { useToast } from '@/hooks/use-toast';
 
 export const useAuthManager = () => {
