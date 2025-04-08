@@ -1,124 +1,20 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, GraduationCap, Building2, Github, Mail } from 'lucide-react';
+
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { useToast } from '@/hooks/use-toast';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { useSupabaseAuth } from '@/lib/supabase-auth-provider';
-import { supabase } from '@/integrations/supabase/client';
-
-// Form validation schema
-const loginSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(1, { message: "Password is required" }),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
+import LoginForm from '@/components/auth/LoginForm';
+import SocialLoginOptions from '@/components/auth/SocialLoginOptions';
+import RoleSelectorTabs from '@/components/auth/RoleSelectorTabs';
+import { useLoginRedirect } from '@/hooks/useLoginRedirect';
 
 const Login = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'student' | 'company'>('student');
-  const { isAuthenticated, isLoading: authLoading, signIn, getUserRole } = useSupabaseAuth();
+  const { isLoading } = useLoginRedirect();
 
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: '',
-      password: ''
-    }
-  });
-
-  // Check if user is already authenticated and redirect if needed
-  useEffect(() => {
-    const checkAuthAndRedirect = async () => {
-      if (isAuthenticated && !authLoading) {
-        try {
-          // Get user role and redirect accordingly
-          const userRole = await getUserRole();
-          console.log("User authenticated with role:", userRole);
-          
-          if (userRole === 'company') {
-            navigate('/company-dashboard');
-          } else {
-            navigate('/student-dashboard');
-          }
-        } catch (error) {
-          console.error("Error during auth redirect:", error);
-        }
-      }
-    };
-    
-    checkAuthAndRedirect();
-  }, [isAuthenticated, authLoading, navigate, getUserRole]);
-
-  const handleFormLogin = async (values: LoginFormValues) => {
-    setIsLoading(true);
-    try {
-      console.log("Attempting to login with:", values.email);
-      
-      // Use the signIn function from the auth context
-      await signIn(values.email, values.password);
-      
-      // Check if the user is authenticated after login
-      const { data: sessionData } = await supabase.auth.getSession();
-      
-      if (sessionData.session) {
-        // Get user role to determine which dashboard to redirect to
-        const userRole = await getUserRole();
-        const dashboardPath = userRole === 'company' ? '/company-dashboard' : '/student-dashboard';
-        
-        console.log("Login successful, redirecting to:", dashboardPath);
-        navigate(dashboardPath);
-      }
-    } catch (error: any) {
-      console.error("Login error:", error);
-      // Error is already handled in signIn function
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSocialLogin = async (provider: 'github' | 'google') => {
-    setIsLoading(true);
-    try {
-      console.log(`Attempting ${provider} login with role:`, selectedRole);
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: provider,
-        options: {
-          redirectTo: `${window.location.origin}/`,
-          queryParams: {
-            role: selectedRole, // Pass role as metadata
-          }
-        }
-      });
-      
-      if (error) {
-        throw error;
-      }
-      // Redirect is handled by Supabase
-    } catch (error: any) {
-      console.error(`${provider} login error:`, error);
-      toast({
-        title: "Login failed",
-        description: error.message || `There was a problem logging in with ${provider}.`,
-        variant: "destructive"
-      });
-      setIsLoading(false);
-    }
-  };
-
-  if (authLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p>Loading authentication...</p>
@@ -137,57 +33,11 @@ const Login = () => {
 
           <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">Log in to Sattejli</h1>
           
-          <Tabs 
-            defaultValue="student" 
-            className="mb-6"
-            onValueChange={(value) => setSelectedRole(value as 'student' | 'company')}
-          >
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="student" className="flex items-center justify-center">
-                <GraduationCap className="mr-2 h-4 w-4" /> Student
-              </TabsTrigger>
-              <TabsTrigger value="company" className="flex items-center justify-center">
-                <Building2 className="mr-2 h-4 w-4" /> Company
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="student">
-              <p className="text-gray-600 text-sm mb-4 text-center">
-                Access your student account to apply for internships and track your applications
-              </p>
-            </TabsContent>
-            <TabsContent value="company">
-              <p className="text-gray-600 text-sm mb-4 text-center">
-                Access your company account to post internship opportunities and manage applications
-              </p>
-            </TabsContent>
-          </Tabs>
+          <RoleSelectorTabs selectedRole={selectedRole} onRoleChange={setSelectedRole} />
           
           {/* Social Login Options */}
           <div className="mb-6">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex flex-col space-y-3">
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start" 
-                    onClick={() => handleSocialLogin('github')}
-                    disabled={isLoading}
-                  >
-                    <Github className="mr-2 h-4 w-4" />
-                    <span>Continue with GitHub</span>
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start" 
-                    onClick={() => handleSocialLogin('google')}
-                    disabled={isLoading}
-                  >
-                    <Mail className="mr-2 h-4 w-4" />
-                    <span>Continue with Google</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <SocialLoginOptions selectedRole={selectedRole} />
           </div>
 
           <div className="relative mb-6">
@@ -199,49 +49,7 @@ const Login = () => {
             </div>
           </div>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleFormLogin)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Enter your email" 
-                        type="email"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Enter your password" 
-                        type="password"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <Button type="submit" className="w-full bg-sattejli-blue hover:bg-blue-600" disabled={isLoading}>
-                {isLoading ? 'Logging in...' : 'Log in'}
-              </Button>
-            </form>
-          </Form>
+          <LoginForm selectedRole={selectedRole} />
           
           <p className="text-sm text-gray-600 text-center mt-6">
             Don't have an account?{' '}
