@@ -8,29 +8,89 @@ import ApplicationsTab from '@/components/company/ApplicationsTab';
 import ProfileTab from '@/components/company/ProfileTab';
 import NotificationsTab from '@/components/company/NotificationsTab';
 import SettingsTab from '@/components/company/SettingsTab';
-import { getCompanyByUserId, getApplicationsByCompany } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
-
-// For demo purposes, we'll use a fixed user ID
-// In a real application, this would come from authentication
-const DEMO_USER_ID = '1';
+import { supabase } from '@/integrations/supabase/client';
 
 const CompanyDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Fetch company data
-  const { data: companyData, isLoading: isLoadingCompany, error: companyError } = useQuery({
-    queryKey: ['company', DEMO_USER_ID],
-    queryFn: () => getCompanyByUserId(DEMO_USER_ID),
+  // Get current user
+  const { data: userData, isLoading: isLoadingUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user found');
+      return user;
+    },
   });
 
-  // Fetch applications
+  // Fetch company data
+  const { data: companyData, isLoading: isLoadingCompany, error: companyError } = useQuery({
+    queryKey: ['company', userData?.id],
+    queryFn: async () => {
+      if (!userData?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('companies')
+        .select(`
+          *,
+          internships (*)
+        `)
+        .eq('user_id', userData.id)
+        .single();
+        
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userData?.id,
+  });
+
+  // Fetch applications for this company's internships
   const { data: applications, isLoading: isLoadingApplications } = useQuery({
     queryKey: ['applications', companyData?.id],
-    queryFn: () => companyData?.id ? getApplicationsByCompany(companyData.id) : Promise.resolve([]),
+    queryFn: async () => {
+      if (!companyData?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('applications')
+        .select(`
+          *,
+          student:student_id (
+            first_name,
+            last_name,
+            university,
+            profile_image
+          ),
+          internship:internship_id (
+            title
+          )
+        `)
+        .eq('internship.company_id', companyData.id);
+        
+      if (error) throw error;
+      return data || [];
+    },
     enabled: !!companyData?.id,
+  });
+
+  // Fetch notifications for this user
+  const { data: notifications, isLoading: isLoadingNotifications } = useQuery({
+    queryKey: ['notifications', userData?.id],
+    queryFn: async () => {
+      if (!userData?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userData.id)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!userData?.id,
   });
 
   const handleEditProfile = () => {
@@ -41,7 +101,7 @@ const CompanyDashboard = () => {
     navigate('/post-internship');
   };
 
-  if (isLoadingCompany) {
+  if (isLoadingUser || isLoadingCompany) {
     return <div className="flex min-h-screen items-center justify-center">Loading company data...</div>;
   }
 
@@ -95,7 +155,11 @@ const CompanyDashboard = () => {
         )}
 
         {activeTab === 'notifications' && (
-          <NotificationsTab userId={DEMO_USER_ID} />
+          <NotificationsTab 
+            userId={userData?.id || ''}
+            notifications={notifications}
+            isLoading={isLoadingNotifications}
+          />
         )}
 
         {activeTab === 'settings' && (

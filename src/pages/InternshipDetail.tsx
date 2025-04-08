@@ -17,8 +17,8 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { getInternship } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const InternshipDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,10 +26,24 @@ const InternshipDetail = () => {
   const navigate = useNavigate();
   const [isSaved, setIsSaved] = useState(false);
 
-  // Fetch internship data from the database
+  // Fetch internship data from Supabase
   const { data: internship, isLoading, error } = useQuery({
     queryKey: ['internship', id],
-    queryFn: () => id ? getInternship(id) : Promise.reject('No internship ID provided'),
+    queryFn: async () => {
+      if (!id) throw new Error('No internship ID provided');
+      
+      const { data, error } = await supabase
+        .from('internships')
+        .select(`
+          *,
+          company:company_id (*)
+        `)
+        .eq('id', id)
+        .single();
+        
+      if (error) throw error;
+      return data;
+    },
     enabled: !!id,
   });
 
@@ -139,7 +153,7 @@ const InternshipDetail = () => {
               </div>
               <div className="flex items-center text-gray-600">
                 <Calendar className="h-5 w-5 mr-2" />
-                <span>{formatDate(internship.startDate)} - {formatDate(internship.endDate)}</span>
+                <span>{formatDate(internship.start_date)} - {formatDate(internship.end_date)}</span>
               </div>
               <div className="flex items-center text-gray-600">
                 <Briefcase className="h-5 w-5 mr-2" />
@@ -147,7 +161,7 @@ const InternshipDetail = () => {
               </div>
               <div className="flex items-center text-gray-600">
                 <Clock className="h-5 w-5 mr-2" />
-                <span>Deadline: {formatDate(internship.applicationDeadline)}</span>
+                <span>Deadline: {formatDate(internship.application_deadline)}</span>
               </div>
               <div className="flex items-center text-gray-600">
                 <DollarSign className="h-5 w-5 mr-2" />
@@ -163,7 +177,7 @@ const InternshipDetail = () => {
             <div className="mb-6">
               <h2 className="text-xl font-bold text-gray-900 mb-2">Responsibilities</h2>
               <ul className="list-disc list-inside text-gray-700">
-                {internship.responsibilities.map((responsibility: string, index: number) => (
+                {internship.responsibilities && internship.responsibilities.map((responsibility: string, index: number) => (
                   <li key={index}>{responsibility}</li>
                 ))}
               </ul>
@@ -172,7 +186,7 @@ const InternshipDetail = () => {
             <div className="mb-6">
               <h2 className="text-xl font-bold text-gray-900 mb-2">Requirements</h2>
               <ul className="list-disc list-inside text-gray-700">
-                {internship.requirements.map((requirement: string, index: number) => (
+                {internship.requirements && internship.requirements.map((requirement: string, index: number) => (
                   <li key={index}>{requirement}</li>
                 ))}
               </ul>
@@ -181,7 +195,7 @@ const InternshipDetail = () => {
             <div className="mb-6">
               <h2 className="text-xl font-bold text-gray-900 mb-2">Skills</h2>
               <div className="flex flex-wrap gap-2 mt-2">
-                {internship.skills.map((skill: string, index: number) => (
+                {internship.skills && internship.skills.map((skill: string, index: number) => (
                   <span 
                     key={index} 
                     className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700"

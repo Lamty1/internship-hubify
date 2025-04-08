@@ -1,29 +1,34 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { FileText as FileIcon, CheckCircle, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getNotificationsByUser, markAllNotificationsAsRead } from '@/lib/api';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { markAllNotificationsAsRead } from '@/lib/api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NotificationsTabProps {
   userId: string;
+  notifications?: any[];
+  isLoading?: boolean;
 }
 
-const NotificationsTab = ({ userId }: NotificationsTabProps) => {
+const NotificationsTab = ({ userId, notifications = [], isLoading = false }: NotificationsTabProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch notifications from database
-  const { data: notifications, isLoading, error } = useQuery({
-    queryKey: ['notifications', userId],
-    queryFn: () => getNotificationsByUser(userId),
-    enabled: !!userId,
-  });
-
   // Create mutation for marking all notifications as read
   const markAllReadMutation = useMutation({
-    mutationFn: () => markAllNotificationsAsRead(userId),
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', userId)
+        .eq('is_read', false);
+        
+      if (error) throw error;
+      return true;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
       toast({
@@ -88,10 +93,6 @@ const NotificationsTab = ({ userId }: NotificationsTabProps) => {
     return <div className="p-6 text-center">Loading notifications...</div>;
   }
 
-  if (error) {
-    return <div className="p-6 text-center text-red-500">Error loading notifications</div>;
-  }
-
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
@@ -107,14 +108,14 @@ const NotificationsTab = ({ userId }: NotificationsTabProps) => {
         {notifications && notifications.length > 0 ? (
           <div className="divide-y divide-gray-100">
             {notifications.map((notification: any) => (
-              <div key={notification.id} className={`p-6 hover:bg-gray-50 flex items-start ${notification.isRead ? 'opacity-60' : ''}`}>
+              <div key={notification.id} className={`p-6 hover:bg-gray-50 flex items-start ${notification.is_read ? 'opacity-60' : ''}`}>
                 <div className={`${getNotificationBgColor(notification.title)} p-2 rounded-full mr-4`}>
                   {getNotificationIcon(notification.title)}
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-900">{notification.title}</p>
                   <p className="text-sm text-gray-600">{notification.message}</p>
-                  <p className="text-xs text-gray-500 mt-1">{formatDate(notification.createdAt)}</p>
+                  <p className="text-xs text-gray-500 mt-1">{formatDate(notification.created_at)}</p>
                 </div>
               </div>
             ))}

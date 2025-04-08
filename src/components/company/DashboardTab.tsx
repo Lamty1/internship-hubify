@@ -3,9 +3,8 @@ import { useEffect, useState } from 'react';
 import { BriefcaseIcon, FileText as FileIcon, Bell, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { InternshipData } from '@/types/company';
-import { getInternshipsByCompany, getApplicationsByCompany } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DashboardTabProps {
   handlePostInternship: () => void;
@@ -20,6 +19,23 @@ const DashboardTab = ({ handlePostInternship, companyId, internships = [] }: Das
     newApplications: 0
   });
 
+  // Fetch applications data for statistics
+  const { data: applications } = useQuery({
+    queryKey: ['applications-stats', companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      
+      const { data, error } = await supabase
+        .from('applications')
+        .select('*, internship:internship_id(*)')
+        .eq('internship.company_id', companyId);
+        
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+
   // Parse and format internships data for display
   const formattedInternships = internships.map(internship => ({
     id: internship.id,
@@ -27,15 +43,8 @@ const DashboardTab = ({ handlePostInternship, companyId, internships = [] }: Das
     applications: internship._count?.applications || 0,
     status: internship.status,
     posted: new Date(internship.posted).toLocaleDateString(),
-    deadline: new Date(internship.applicationDeadline).toLocaleDateString(),
+    deadline: new Date(internship.application_deadline).toLocaleDateString(),
   }));
-
-  // Fetch applications data for statistics
-  const { data: applications } = useQuery({
-    queryKey: ['applications-stats', companyId],
-    queryFn: () => companyId ? getApplicationsByCompany(companyId) : Promise.resolve([]),
-    enabled: !!companyId,
-  });
 
   useEffect(() => {
     if (internships && applications) {
