@@ -1,7 +1,7 @@
 
 import { Navigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { useAuthManager } from '@/lib/auth-utils';
+import { useSupabaseAuth } from '@/lib/supabase-auth-provider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
@@ -11,8 +11,8 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
-  const { isAuthenticated, isLoading, user } = useAuthManager();
-  const { syncUserWithDatabase, getUserRole } = useAuthManager();
+  const { isAuthenticated, isLoading, user } = useSupabaseAuth();
+  const { syncUserWithDatabase, getUserRole } = useSupabaseAuth();
   const { toast } = useToast();
   const location = useLocation();
   const [isSyncing, setIsSyncing] = useState(false);
@@ -25,22 +25,34 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
         console.log("Authenticated user:", user);
         setIsSyncing(true);
         
-        // Sync user with local database
-        await syncUserWithDatabase();
-        
-        // Get user role
-        const userRole = await getUserRole();
-        console.log("User role from database:", userRole);
-        setRole(userRole);
-        
-        setIsSyncing(false);
-        setIsCheckingRole(false);
-        
-        // Notify if role doesn't match required role
-        if (requiredRole && userRole !== requiredRole) {
+        try {
+          // Sync user with local database
+          await syncUserWithDatabase();
+          
+          // Get user role
+          const userRole = await getUserRole();
+          console.log("User role from database:", userRole);
+          setRole(userRole);
+          
+          setIsSyncing(false);
+          setIsCheckingRole(false);
+          
+          // Notify if role doesn't match required role
+          if (requiredRole && userRole !== requiredRole) {
+            toast({
+              title: "Access restricted",
+              description: `You need ${requiredRole} role to access this page.`,
+              variant: "destructive"
+            });
+          }
+        } catch (error) {
+          console.error("Error syncing user:", error);
+          setIsSyncing(false);
+          setIsCheckingRole(false);
+          
           toast({
-            title: "Access restricted",
-            description: `You need ${requiredRole} role to access this page.`,
+            title: "Error",
+            description: "There was a problem with your account. Please try logging in again.",
             variant: "destructive"
           });
         }
@@ -59,7 +71,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-32 w-96" />
         <Skeleton className="h-8 w-48" />
-        <p className="text-sm text-muted-foreground">Loading your profile and syncing with local database...</p>
+        <p className="text-sm text-muted-foreground">Loading your profile and syncing with database...</p>
       </div>
     );
   }
@@ -69,7 +81,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Redirect to proper dashboard based on role
+  // Redirect to proper dashboard based on role if on root path
   if (location.pathname === '/') {
     if (role === 'company') {
       return <Navigate to="/company-dashboard" replace />;
@@ -78,14 +90,19 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
     }
   }
 
-  // If role is required, check if user has the required role
-  if (requiredRole && role !== requiredRole) {
-    // Redirect to unauthorized page or appropriate dashboard
+  // If role is required, check if user has the required role (but only enforce if we've finished checking the role)
+  if (requiredRole && !isCheckingRole && role !== requiredRole) {
+    // Don't enforce role requirement if still checking
+    let redirectPath = '/';
+    
+    // Redirect to appropriate dashboard based on actual role
     if (role === 'company') {
-      return <Navigate to="/company-dashboard" replace />;
-    } else {
-      return <Navigate to="/student-dashboard" replace />;
+      redirectPath = '/company-dashboard';
+    } else if (role === 'student') {
+      redirectPath = '/student-dashboard';
     }
+    
+    return <Navigate to={redirectPath} replace />;
   }
 
   return <>{children}</>;

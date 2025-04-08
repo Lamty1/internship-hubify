@@ -32,19 +32,67 @@ const CompanyDashboard = () => {
     queryFn: async () => {
       if (!userData?.id) return null;
       
-      const { data, error } = await supabase
-        .from('companies')
-        .select(`
-          *,
-          internships (*)
-        `)
-        .eq('user_id', userData.id)
-        .single();
+      try {
+        // First get the user record to find their linked company
+        const { data: userRecord, error: userError } = await supabase
+          .from('users')
+          .select('id')
+          .eq('auth_id', userData.id)
+          .single();
+          
+        if (userError) {
+          console.error('Error fetching user record:', userError);
+          throw userError;
+        }
         
-      if (error) throw error;
-      return data;
+        if (!userRecord?.id) {
+          console.error('No user record found for auth ID:', userData.id);
+          throw new Error('User record not found');
+        }
+        
+        // Then get company data
+        const { data, error } = await supabase
+          .from('companies')
+          .select(`
+            *,
+            internships (*)
+          `)
+          .eq('user_id', userRecord.id)
+          .maybeSingle();
+          
+        if (error) throw error;
+        
+        // Create a default company profile if none exists
+        if (!data) {
+          const { data: newCompany, error: createError } = await supabase
+            .from('companies')
+            .insert([
+              { 
+                user_id: userRecord.id, 
+                name: 'My Company', 
+                description: 'Add your company description here'
+              }
+            ])
+            .select('*')
+            .single();
+            
+          if (createError) throw createError;
+          return { ...newCompany, internships: [] };
+        }
+        
+        return data;
+      } catch (error) {
+        console.error('Error fetching company data:', error);
+        toast({
+          title: "Error loading company data",
+          description: "Please try refreshing the page or contact support.",
+          variant: "destructive"
+        });
+        throw error;
+      }
     },
     enabled: !!userData?.id,
+    retry: 1,
   });
 
   // Fetch applications for this company's internships
@@ -53,24 +101,29 @@ const CompanyDashboard = () => {
     queryFn: async () => {
       if (!companyData?.id) return [];
       
-      const { data, error } = await supabase
-        .from('applications')
-        .select(`
-          *,
-          student:student_id (
-            first_name,
-            last_name,
-            university,
-            profile_image
-          ),
-          internship:internship_id (
-            title
-          )
-        `)
-        .eq('internship.company_id', companyData.id);
-        
-      if (error) throw error;
-      return data || [];
+      try {
+        const { data, error } = await supabase
+          .from('applications')
+          .select(`
+            *,
+            student:student_id (
+              first_name,
+              last_name,
+              university,
+              profile_image
+            ),
+            internship:internship_id (
+              title
+            )
+          `)
+          .eq('internship.company_id', companyData.id);
+          
+        if (error) throw error;
+        return data || [];
+      } catch (error) {
+        console.error('Error fetching applications:', error);
+        return [];
+      }
     },
     enabled: !!companyData?.id,
   });
@@ -81,14 +134,33 @@ const CompanyDashboard = () => {
     queryFn: async () => {
       if (!userData?.id) return [];
       
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', userData.id)
-        .order('created_at', { ascending: false });
+      try {
+        // First get the user record to find their ID in our database
+        const { data: userRecord, error: userError } = await supabase
+          .from('users')
+          .select('id')
+          .eq('auth_id', userData.id)
+          .single();
+          
+        if (userError) {
+          console.error('Error fetching user record for notifications:', userError);
+          return [];
+        }
         
-      if (error) throw error;
-      return data || [];
+        if (!userRecord?.id) return [];
+        
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', userRecord.id)
+          .order('created_at', { ascending: false });
+          
+        if (error) throw error;
+        return data || [];
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+        return [];
+      }
     },
     enabled: !!userData?.id,
   });
@@ -101,22 +173,72 @@ const CompanyDashboard = () => {
     navigate('/post-internship');
   };
 
-  if (isLoadingUser || isLoadingCompany) {
+  // Add sample data for testing if needed
+  useEffect(() => {
+    if (companyData && companyData.internships && companyData.internships.length === 0) {
+      const createSampleInternship = async () => {
+        try {
+          // Only create sample data if there are no internships
+          const { error } = await supabase
+            .from('internships')
+            .insert([
+              {
+                company_id: companyData.id,
+                title: 'Sample Software Engineering Internship',
+                location: 'Remote',
+                type: 'Full-time',
+                start_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                end_date: new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString(),
+                application_deadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+                salary: '1000-1500 USD/month',
+                description: 'This is a sample internship for testing purposes.',
+                responsibilities: ['Code development', 'Testing', 'Documentation'],
+                requirements: ['JavaScript knowledge', 'React experience'],
+                skills: ['JavaScript', 'React', 'Node.js'],
+                positions: 2,
+                status: 'active'
+              }
+            ]);
+            
+          if (error) {
+            console.error('Error creating sample internship:', error);
+          }
+        } catch (err) {
+          console.error('Error in createSampleInternship:', err);
+        }
+      };
+      
+      createSampleInternship();
+    }
+  }, [companyData]);
+
+  if (isLoadingUser) {
+    return <div className="flex min-h-screen items-center justify-center">Loading user data...</div>;
+  }
+
+  if (isLoadingCompany && !companyError) {
     return <div className="flex min-h-screen items-center justify-center">Loading company data...</div>;
   }
 
+  // Display an error message with an option to retry
   if (companyError) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center">
         <h1 className="text-2xl font-bold text-red-600">Error loading company data</h1>
-        <p className="text-gray-600">Please try again later</p>
+        <p className="text-gray-600 mt-2 mb-4">Please try again later</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          Retry
+        </button>
       </div>
     );
   }
 
   const companyInfo = companyData || {
     name: 'Company Name',
-    logo: 'https://via.placeholder.com/100',
+    logo: '/placeholder.svg',
     industry: 'Industry',
     location: 'Location',
     website: 'website.com',
