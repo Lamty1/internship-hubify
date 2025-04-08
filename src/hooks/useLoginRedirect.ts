@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '@/lib/supabase-auth-provider';
+import { toast } from '@/hooks/use-toast';
 
 export const useLoginRedirect = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -23,6 +24,13 @@ export const useLoginRedirect = () => {
           }
         } catch (error) {
           console.error("Error during auth redirect:", error);
+          toast({
+            title: "Navigation issue",
+            description: "There was a problem determining your user role. Redirecting to default dashboard.",
+            variant: "default"
+          });
+          // Default to student dashboard on error
+          navigate('/student-dashboard');
         }
       }
       setIsLoading(false);
