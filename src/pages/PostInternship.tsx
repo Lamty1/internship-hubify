@@ -78,7 +78,7 @@ const PostInternship = () => {
     setIsSubmitting(true);
     
     try {
-      await createInternship(companyId, formData);
+      await createInternship(formData, companyId);
       
       toast({
         title: "Internship posted",
