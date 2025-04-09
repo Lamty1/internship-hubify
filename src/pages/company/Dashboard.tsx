@@ -1,208 +1,49 @@
 
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
-import CompanySidebar from '@/components/company/Sidebar';
-import DashboardTab from '@/components/company/DashboardTab';
-import ApplicationsTab from '@/components/company/ApplicationsTab';
-import ProfileTab from '@/components/company/ProfileTab';
-import NotificationsTab from '@/components/company/NotificationsTab';
-import SettingsTab from '@/components/company/SettingsTab';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useSupabaseAuth } from '@/lib/supabase-auth-provider';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSupabaseAuth } from "@/lib/supabase-auth-provider";
+import DashboardLayout from "@/components/company/DashboardLayout";
+import DashboardTab from "@/components/company/DashboardTab";
+import ApplicationsTab from "@/components/company/ApplicationsTab";
+import ProfileTab from "@/components/company/ProfileTab";
+import NotificationsTab from "@/components/company/NotificationsTab";
+import SettingsTab from "@/components/company/SettingsTab";
+import SampleDataGenerator from "@/components/company/SampleDataGenerator";
+import { useCompanyData } from "@/hooks/useCompanyData";
+import { useCompanyApplications } from "@/hooks/useCompanyApplications";
+import { useCompanyNotifications } from "@/hooks/useCompanyNotifications";
 
 const CompanyDashboard = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState("dashboard");
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { user } = useSupabaseAuth();
 
   // Fetch company data
-  const { data: companyData, isLoading: isLoadingCompany, error: companyError } = useQuery({
-    queryKey: ['company', user?.id],
-    queryFn: async () => {
-      if (!user?.id) throw new Error('No user found');
-      
-      try {
-        // First get the user record to find their linked company
-        const { data: userRecord, error: userError } = await supabase
-          .from('users')
-          .select('id')
-          .eq('auth_id', user.id)
-          .single();
-          
-        if (userError) {
-          console.error('Error fetching user record:', userError);
-          throw userError;
-        }
-        
-        if (!userRecord?.id) {
-          console.error('No user record found for auth ID:', user.id);
-          throw new Error('User record not found');
-        }
-        
-        // Then get company data
-        const { data, error } = await supabase
-          .from('companies')
-          .select(`
-            *,
-            internships (*)
-          `)
-          .eq('user_id', userRecord.id)
-          .maybeSingle();
-          
-        if (error) throw error;
-        
-        // Create a default company profile if none exists
-        if (!data) {
-          const { data: newCompany, error: createError } = await supabase
-            .from('companies')
-            .insert([
-              { 
-                user_id: userRecord.id, 
-                name: 'My Company', 
-                description: 'Add your company description here'
-              }
-            ])
-            .select()
-            .single();
-            
-          if (createError) throw createError;
-          return { ...newCompany, internships: [] };
-        }
-        
-        return data;
-      } catch (error) {
-        console.error('Error fetching company data:', error);
-        toast({
-          title: "Error loading company data",
-          description: "Please try refreshing the page or contact support.",
-          variant: "destructive"
-        });
-        throw error;
-      }
-    },
-    enabled: !!user?.id,
-    retry: 1,
-  });
+  const { 
+    data: companyData, 
+    isLoading: isLoadingCompany, 
+    error: companyError 
+  } = useCompanyData(user?.id);
 
   // Fetch applications for this company's internships
-  const { data: applications, isLoading: isLoadingApplications } = useQuery({
-    queryKey: ['applications', companyData?.id],
-    queryFn: async () => {
-      if (!companyData?.id) return [];
-      
-      try {
-        const { data, error } = await supabase
-          .from('applications')
-          .select(`
-            *,
-            student:student_id (
-              first_name,
-              last_name,
-              university,
-              profile_image
-            ),
-            internship:internship_id (
-              title
-            )
-          `)
-          .eq('internship.company_id', companyData.id);
-          
-        if (error) throw error;
-        return data || [];
-      } catch (error) {
-        console.error('Error fetching applications:', error);
-        return [];
-      }
-    },
-    enabled: !!companyData?.id,
-  });
+  const { 
+    data: applications, 
+    isLoading: isLoadingApplications 
+  } = useCompanyApplications(companyData?.id);
 
   // Fetch notifications for this user
-  const { data: notifications, isLoading: isLoadingNotifications } = useQuery({
-    queryKey: ['notifications', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      
-      try {
-        // First get the user record to find their ID in our database
-        const { data: userRecord, error: userError } = await supabase
-          .from('users')
-          .select('id')
-          .eq('auth_id', user.id)
-          .single();
-          
-        if (userError) {
-          console.error('Error fetching user record for notifications:', userError);
-          return [];
-        }
-        
-        if (!userRecord?.id) return [];
-        
-        const { data, error } = await supabase
-          .from('notifications')
-          .select('*')
-          .eq('user_id', userRecord.id)
-          .order('created_at', { ascending: false });
-          
-        if (error) throw error;
-        return data || [];
-      } catch (error) {
-        console.error('Error fetching notifications:', error);
-        return [];
-      }
-    },
-    enabled: !!user?.id,
-  });
+  const { 
+    data: notifications, 
+    isLoading: isLoadingNotifications 
+  } = useCompanyNotifications(user?.id);
 
   const handleEditProfile = () => {
-    navigate('/company-profile');
+    navigate("/company-profile");
   };
   
   const handlePostInternship = () => {
-    navigate('/post-internship');
+    navigate("/post-internship");
   };
-
-  // Add sample data for testing if needed
-  useEffect(() => {
-    if (companyData && companyData.internships && companyData.internships.length === 0) {
-      const createSampleInternship = async () => {
-        try {
-          // Only create sample data if there are no internships
-          const { error } = await supabase
-            .from('internships')
-            .insert([
-              {
-                company_id: companyData.id,
-                title: 'Sample Software Engineering Internship',
-                location: 'Remote',
-                type: 'Full-time',
-                start_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                end_date: new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString(),
-                application_deadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-                salary: '1000-1500 USD/month',
-                description: 'This is a sample internship for testing purposes.',
-                responsibilities: ['Code development', 'Testing', 'Documentation'],
-                requirements: ['JavaScript knowledge', 'React experience'],
-                skills: ['JavaScript', 'React', 'Node.js'],
-                positions: 2,
-                status: 'active'
-              }
-            ]);
-            
-          if (error) {
-            console.error('Error creating sample internship:', error);
-          }
-        } catch (err) {
-          console.error('Error in createSampleInternship:', err);
-        }
-      };
-      
-      createSampleInternship();
-    }
-  }, [companyData]);
 
   if (isLoadingCompany && !companyError) {
     return <div className="flex min-h-screen items-center justify-center">Loading company data...</div>;
@@ -225,60 +66,67 @@ const CompanyDashboard = () => {
   }
 
   const companyInfo = companyData || {
-    name: 'Company Name',
-    logo: '/placeholder.svg',
-    industry: 'Industry',
-    location: 'Location',
-    website: 'website.com',
-    email: 'email@example.com',
-    phone: '+123456789',
-    description: 'Company description',
+    name: "Company Name",
+    logo: "/placeholder.svg",
+    industry: "Industry",
+    location: "Location",
+    website: "website.com",
+    email: "email@example.com",
+    phone: "+123456789",
+    description: "Company description",
   };
 
+  const shouldGenerateSampleData = 
+    companyData && 
+    companyData.internships && 
+    companyData.internships.length === 0;
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <CompanySidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+    <DashboardLayout activeTab={activeTab} setActiveTab={setActiveTab}>
+      {shouldGenerateSampleData && activeTab === "dashboard" && (
+        <SampleDataGenerator 
+          companyId={companyData?.id}
+          userId={user?.id}
+          shouldGenerateInternship={shouldGenerateSampleData}
+        />
+      )}
 
-      {/* Main Content */}
-      <div className="flex-1 p-8">
-        {activeTab === 'dashboard' && (
-          <DashboardTab 
-            handlePostInternship={handlePostInternship}
-            companyId={companyData?.id}
-            internships={companyData?.internships || []}
-          />
-        )}
+      {activeTab === "dashboard" && (
+        <DashboardTab 
+          handlePostInternship={handlePostInternship}
+          companyId={companyData?.id}
+          internships={companyData?.internships || []}
+        />
+      )}
 
-        {activeTab === 'applications' && (
-          <ApplicationsTab 
-            applications={applications || []}
-            isLoading={isLoadingApplications}
-          />
-        )}
+      {activeTab === "applications" && (
+        <ApplicationsTab 
+          applications={applications || []}
+          isLoading={isLoadingApplications}
+        />
+      )}
 
-        {activeTab === 'profile' && (
-          <ProfileTab 
-            companyInfo={companyInfo} 
-            handleEditProfile={handleEditProfile} 
-          />
-        )}
+      {activeTab === "profile" && (
+        <ProfileTab 
+          companyInfo={companyInfo} 
+          handleEditProfile={handleEditProfile} 
+        />
+      )}
 
-        {activeTab === 'notifications' && (
-          <NotificationsTab 
-            userId={user?.id || ''}
-            notifications={notifications || []}
-            isLoading={isLoadingNotifications}
-          />
-        )}
+      {activeTab === "notifications" && (
+        <NotificationsTab 
+          userId={user?.id || ""}
+          notifications={notifications || []}
+          isLoading={isLoadingNotifications}
+        />
+      )}
 
-        {activeTab === 'settings' && (
-          <SettingsTab 
-            companyInfo={companyInfo} 
-          />
-        )}
-      </div>
-    </div>
+      {activeTab === "settings" && (
+        <SettingsTab 
+          companyInfo={companyInfo} 
+        />
+      )}
+    </DashboardLayout>
   );
 };
 
