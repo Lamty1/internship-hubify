@@ -34,7 +34,7 @@ const CompanySidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
           <li>
             <button
               className={`w-full text-left px-4 py-2 rounded-md flex items-center ${
-                activeTab === 'dashboard' ? 'bg-sattejli-blue text-white' : 'text-gray-700 hover:bg-gray-100'
+                activeTab === 'dashboard' ? 'bg-blue-500 text-white' : 'text-gray-700 hover:bg-gray-100'
               }`}
               onClick={() => setActiveTab('dashboard')}
             >
@@ -45,7 +45,7 @@ const CompanySidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
           <li>
             <button
               className={`w-full text-left px-4 py-2 rounded-md flex items-center ${
-                activeTab === 'applications' ? 'bg-sattejli-blue text-white' : 'text-gray-700 hover:bg-gray-100'
+                activeTab === 'applications' ? 'bg-blue-500 text-white' : 'text-gray-700 hover:bg-gray-100'
               }`}
               onClick={() => setActiveTab('applications')}
             >
@@ -56,7 +56,7 @@ const CompanySidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
           <li>
             <button
               className={`w-full text-left px-4 py-2 rounded-md flex items-center ${
-                activeTab === 'profile' ? 'bg-sattejli-blue text-white' : 'text-gray-700 hover:bg-gray-100'
+                activeTab === 'profile' ? 'bg-blue-500 text-white' : 'text-gray-700 hover:bg-gray-100'
               }`}
               onClick={() => setActiveTab('profile')}
             >
@@ -67,7 +67,7 @@ const CompanySidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
           <li>
             <button
               className={`w-full text-left px-4 py-2 rounded-md flex items-center ${
-                activeTab === 'notifications' ? 'bg-sattejli-blue text-white' : 'text-gray-700 hover:bg-gray-100'
+                activeTab === 'notifications' ? 'bg-blue-500 text-white' : 'text-gray-700 hover:bg-gray-100'
               }`}
               onClick={() => setActiveTab('notifications')}
             >
@@ -78,7 +78,7 @@ const CompanySidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
           <li>
             <button
               className={`w-full text-left px-4 py-2 rounded-md flex items-center ${
-                activeTab === 'settings' ? 'bg-sattejli-blue text-white' : 'text-gray-700 hover:bg-gray-100'
+                activeTab === 'settings' ? 'bg-blue-500 text-white' : 'text-gray-700 hover:bg-gray-100'
               }`}
               onClick={() => setActiveTab('settings')}
             >

@@ -26,7 +26,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
         setIsSyncing(true);
         
         try {
-          // Sync user with local database
+          // Sync user with database
           await syncUserWithDatabase();
           
           // Get user role
@@ -71,7 +71,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-32 w-96" />
         <Skeleton className="h-8 w-48" />
-        <p className="text-sm text-muted-foreground">Loading your profile and syncing with database...</p>
+        <p className="text-sm text-muted-foreground">Loading your profile...</p>
       </div>
     );
   }
@@ -92,7 +92,6 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
 
   // If role is required, check if user has the required role (but only enforce if we've finished checking the role)
   if (requiredRole && !isCheckingRole && role !== requiredRole) {
-    // Don't enforce role requirement if still checking
     let redirectPath = '/';
     
     // Redirect to appropriate dashboard based on actual role

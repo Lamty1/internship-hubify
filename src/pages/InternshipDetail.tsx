@@ -19,12 +19,14 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useSupabaseAuth } from '@/lib/supabase-auth-provider';
 
 const InternshipDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isSaved, setIsSaved] = useState(false);
+  const { user } = useSupabaseAuth();
 
   // Fetch internship data from Supabase
   const { data: internship, isLoading, error } = useQuery({
@@ -63,8 +65,19 @@ const InternshipDetail = () => {
     });
   };
 
-  const handleApply = () => {
+  const handleApply = async () => {
+    if (!user) {
+      toast({
+        title: "Login required",
+        description: "You need to log in to apply for internships.",
+        variant: "destructive"
+      });
+      navigate("/login");
+      return;
+    }
+
     // In a real app, this would go to a form to apply
+    // For now, we'll just navigate to the student dashboard
     navigate("/student-dashboard");
   };
 

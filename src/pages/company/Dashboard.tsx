@@ -10,34 +10,26 @@ import NotificationsTab from '@/components/company/NotificationsTab';
 import SettingsTab from '@/components/company/SettingsTab';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useSupabaseAuth } from '@/lib/supabase-auth-provider';
 
 const CompanyDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  // Get current user
-  const { data: userData, isLoading: isLoadingUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
-      return user;
-    },
-  });
+  const { user } = useSupabaseAuth();
 
   // Fetch company data
   const { data: companyData, isLoading: isLoadingCompany, error: companyError } = useQuery({
-    queryKey: ['company', userData?.id],
+    queryKey: ['company', user?.id],
     queryFn: async () => {
-      if (!userData?.id) return null;
+      if (!user?.id) throw new Error('No user found');
       
       try {
         // First get the user record to find their linked company
         const { data: userRecord, error: userError } = await supabase
           .from('users')
           .select('id')
-          .eq('auth_id', userData.id)
+          .eq('auth_id', user.id)
           .single();
           
         if (userError) {
@@ -46,7 +38,7 @@ const CompanyDashboard = () => {
         }
         
         if (!userRecord?.id) {
-          console.error('No user record found for auth ID:', userData.id);
+          console.error('No user record found for auth ID:', user.id);
           throw new Error('User record not found');
         }
         
@@ -73,7 +65,7 @@ const CompanyDashboard = () => {
                 description: 'Add your company description here'
               }
             ])
-            .select('*')
+            .select()
             .single();
             
           if (createError) throw createError;
@@ -91,7 +83,7 @@ const CompanyDashboard = () => {
         throw error;
       }
     },
-    enabled: !!userData?.id,
+    enabled: !!user?.id,
     retry: 1,
   });
 
@@ -130,16 +122,16 @@ const CompanyDashboard = () => {
 
   // Fetch notifications for this user
   const { data: notifications, isLoading: isLoadingNotifications } = useQuery({
-    queryKey: ['notifications', userData?.id],
+    queryKey: ['notifications', user?.id],
     queryFn: async () => {
-      if (!userData?.id) return [];
+      if (!user?.id) return [];
       
       try {
         // First get the user record to find their ID in our database
         const { data: userRecord, error: userError } = await supabase
           .from('users')
           .select('id')
-          .eq('auth_id', userData.id)
+          .eq('auth_id', user.id)
           .single();
           
         if (userError) {
@@ -162,7 +154,7 @@ const CompanyDashboard = () => {
         return [];
       }
     },
-    enabled: !!userData?.id,
+    enabled: !!user?.id,
   });
 
   const handleEditProfile = () => {
@@ -211,10 +203,6 @@ const CompanyDashboard = () => {
       createSampleInternship();
     }
   }, [companyData]);
-
-  if (isLoadingUser) {
-    return <div className="flex min-h-screen items-center justify-center">Loading user data...</div>;
-  }
 
   if (isLoadingCompany && !companyError) {
     return <div className="flex min-h-screen items-center justify-center">Loading company data...</div>;
@@ -278,8 +266,8 @@ const CompanyDashboard = () => {
 
         {activeTab === 'notifications' && (
           <NotificationsTab 
-            userId={userData?.id || ''}
-            notifications={notifications}
+            userId={user?.id || ''}
+            notifications={notifications || []}
             isLoading={isLoadingNotifications}
           />
         )}
